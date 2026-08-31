@@ -1,0 +1,168 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+body {
+    background-color: #121212;
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+
+.auth-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0b0b0b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.auth-box {
+    background: #1e1e1e;
+    padding: 30px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.auth-box h2 {
+    margin-bottom: 10px;
+    color: #4CAF50;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+.auth-box p {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    color: #aaa;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    background: #2c2c2c;
+    border: 1px solid #444;
+    color: #fff;
+    border-radius: 4px;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn.primary {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn.secondary {
+    background-color: #333;
+    color: #ddd;
+    border: 1px solid #555;
+}
+
+.btn.logout {
+    background-color: #d32f2f;
+    color: white;
+    padding: 5px 10px;
+    flex: unset;
+}
+
+.error-msg {
+    color: #ff5252;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+header {
+    background: #1a1a1a;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+header h1 {
+    color: #4CAF50;
+    letter-spacing: 1px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.kasa-layout {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 20px;
+}
+
+section {
+    background: #181818;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 20px;
+    flex: 1;
+    min-width: 300px;
+}
+
+section h2 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+}
+
+.koszyk-lista {
+    min-height: 150px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: #111;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.item {
+    padding: 8px;
+    border-bottom: 1px dashed #333;
+    display: flex;
+    justify-content: space-between;
+}
