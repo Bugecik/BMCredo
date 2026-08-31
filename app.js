@@ -15,33 +15,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalWObiegu = document.getElementById('total-w-obiegu');
     const lastMoveText = document.getElementById('last-move-text');
 
+    // Kafelki
     const tileAddLoan = document.getElementById('tile-add-loan');
+    const tileKasetka = document.getElementById('tile-kasetka');
     const tileScanner = document.getElementById('tile-scanner');
     const tileReport = document.getElementById('tile-report');
-    const scannerModal = document.getElementById('scanner-modal');
-    const btnCloseScanner = document.getElementById('btn-close-scanner');
+
+    // Modale
+    const modalLoan = document.getElementById('modal-loan');
+    const modalReceipt = document.getElementById('modal-receipt');
+    const modalKasetka = document.getElementById('modal-kasetka');
+    const modalScanner = document.getElementById('modal-scanner');
+    const modalReport = document.getElementById('modal-report');
+
+    const loanForm = document.getElementById('loan-form');
+    const loanPerson = document.getElementById('loan-person');
+    const loanAmount = document.getElementById('loan-amount');
+    const loanInterest = document.getElementById('loan-interest');
+    const receiptContent = document.getElementById('receipt-content');
+    const qrcodeDiv = document.getElementById('qrcode');
+    const kasetkaInputValue = document.getElementById('kasetka-input-value');
+    const reportContent = document.getElementById('report-content');
 
     const terminalInput = document.getElementById('terminal-input');
     const terminalEnter = document.getElementById('terminal-enter');
 
     let currentTab = 'do-splaty';
 
-    // Obsługa logowania sesyjnego
+    // Sesja logowania
     const loggedUser = sessionStorage.getItem('bmcredo_logged_user');
-    if (loggedUser) {
-        approveLogin(loggedUser);
-    }
+    if (loggedUser) approveLogin(loggedUser);
 
     btnRegister.addEventListener('click', () => {
         const u = usernameInput.value.trim();
         const p = passwordInput.value.trim();
         if (!u || !p) { showError('Wypełnij login i hasło.'); return; }
         const users = getUsersDB();
-        if (users[u]) { showError('Taki użytkownik już istnieje!'); return; }
+        if (users[u]) { showError('Użytkownik już istnieje!'); return; }
         users[u] = { password: p };
         saveUsersDB(users);
         authError.style.color = '#a3be8c';
-        authError.textContent = 'Konto utworzone! Możesz się zalogować.';
+        authError.textContent = 'Konto utworzone! Zaloguj się.';
     });
 
     authForm.addEventListener('submit', (e) => {
@@ -66,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authOverlay.style.display = 'none';
         appContainer.style.display = 'flex';
         currentUserDisplay.textContent = user;
-        loadUserData(user);
+        renderApp(user);
     }
 
     function showError(msg) {
@@ -87,22 +101,32 @@ document.addEventListener('DOMContentLoaded', () => {
         renderApp(user);
     }
 
-    // Zakładki górne
+    // Zamykanie modali uniwersalne
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            modalLoan.style.display = 'none';
+            modalReceipt.style.display = 'none';
+            modalKasetka.style.display = 'none';
+            modalScanner.style.display = 'none';
+            modalReport.style.display = 'none';
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
+            }
+        });
+    });
+
+    // Zakładki
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             currentTab = e.target.getAttribute('data-tab');
-            const user = sessionStorage.getItem('bmcredo_logged_user');
-            renderApp(user);
+            renderApp(sessionStorage.getItem('bmcredo_logged_user'));
         });
     });
 
-    // Renderowanie widoku POS
     function renderApp(user) {
         const data = getDBData(user);
-        
-        // Obliczenia statystyk
         let activeCount = data.loans.filter(l => !l.splacone).length;
         let wObieguSum = data.loans.filter(l => !l.splacone).reduce((acc, l) => acc + parseFloat(l.amount || 0), 0);
 
@@ -111,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalWObiegu.textContent = `${wObieguSum.toFixed(2)} zł`;
         lastMoveText.textContent = data.lastMove;
 
-        // Filtrowanie po zakładkach
         let filtered = data.loans;
         const now = new Date();
 
@@ -126,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else if (currentTab === 'splacone') {
             filtered = data.loans.filter(l => l.splacone);
-        } // 'wszyscy' pokazuje wszystko
+        }
 
         loansList.innerHTML = '';
         if (filtered.length === 0) {
@@ -140,10 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
             div.innerHTML = `
                 <div>
                     <div class="loan-title">${loan.name} <span style="font-size:0.75rem; color:#88c0d0;">[${loan.code}]</span></div>
-                    <div class="loan-sub">${loan.odKiedy}</div>
+                    <div class="loan-sub">Data: ${loan.dataWpisu} | Odsetki: ${loan.interest}% po 14 dniach</div>
                 </div>
                 <div class="loan-right">
-                    <div class="loan-amount ${loan.type === 'plus' ? 'plus' : ''}">${loan.type === 'plus' ? '+' : '-'}${loan.amount} zł</div>
+                    <div class="loan-amount">-${loan.amount} zł</div>
                     <div class="loan-status" style="color: ${loan.splacone ? '#a3be8c' : '#ebcb8b'}">${loan.splacone ? 'SPŁACONE' : 'AKTYWNA'}</div>
                     <button onclick="window.toggleSplacone(${index})" style="background:none; border:none; color:#88c0d0; cursor:pointer; font-size:0.7rem; margin-top:4px;">[zmień status]</button>
                 </div>
@@ -152,51 +175,161 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function loadUserData(user) {
-        renderApp(user);
-    }
-
-    // Dodawanie pożyczki kafelek
+    // 1. OTWARCIE KONTENERA: POŻYCZKA
     tileAddLoan.addEventListener('click', () => {
+        loanPerson.value = '';
+        loanAmount.value = '';
+        loanInterest.value = '5';
+        modalLoan.style.display = 'flex';
+    });
+
+    loanForm.addEventListener('submit', (e) => {
+        e.preventDefault();
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = getDBData(user);
-        const name = prompt("Podaj nazwę dłużnika / klienta:", "Jan Kowalski");
-        if (!name) return;
-        const amount = prompt("Podaj kwotę w zł:", "150");
-        if (!amount) return;
+
+        const person = loanPerson.value.trim();
+        const amount = parseFloat(loanAmount.value).toFixed(2);
+        const interest = loanInterest.value;
+        const code = `P-${101 + data.loans.length}`;
+        const dataWpisu = new Date().toLocaleDateString();
+
+        // Oblicz datę zwrotu / odsetek po 14 dniach
+        const zwrotDate = new Date();
+        zwrotDate.setDate(zwrotDate.getDate() + 14);
+        const zwrotStr = zwrotDate.toLocaleDateString();
 
         const newLoan = {
-            code: `P-${100 + data.loans.length + 1}`,
-            name: name,
-            amount: parseFloat(amount).toFixed(2),
-            odKiedy: 'Od dzisiaj',
-            date: new Date().toISOString(),
-            splacone: false,
-            type: 'minus'
+            code, name: person, amount, interest, dataWpisu, zwrotStr,
+            date: new Date().toISOString(), splacone: false
         };
 
         data.loans.push(newLoan);
-        data.lastMove = `+ ${name} (${amount} zł)`;
+        data.lastMove = `+ ${person} (${amount} zł)`;
         saveDBData(user, data);
+
+        modalLoan.style.display = 'none';
+
+        // Generowanie paragonu z QR
+        receiptContent.innerHTML = `
+            <b>BMCREDO SYSTEM POŻYCZEK</b><br>
+            --------------------------------<br>
+            Kod: <b>${code}</b><br>
+            Dłużnik: <b>${person}</b><br>
+            Kwota: <b>${amount} zł</b><br>
+            Odsetki (>14 dni): <b>${interest}%</b><br>
+            Data pożyczki: ${dataWpisu}<br>
+            Termin odsetkowy: ${zwrotStr}<br>
+            --------------------------------
+        `;
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, {
+            text: `BMCREDO:${code}:${person}:${amount}:${interest}`,
+            width: 120, height: 120
+        });
+        modalReceipt.style.display = 'flex';
     });
 
-    // Terminal enter lub przycisk
+    // 2. OTWARCIE KONTENERA: KASETKA
+    tileKasetka.addEventListener('click', () => {
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = getDBData(user);
+        kasetkaInputValue.value = data.kasetka;
+        modalKasetka.style.display = 'flex';
+    });
+
+    document.querySelectorAll('.btn-cash').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const add = parseFloat(e.target.getAttribute('data-val'));
+            kasetkaInputValue.value = (parseFloat(kasetkaInputValue.value || 0) + add).toFixed(2);
+        });
+    });
+
+    document.getElementById('save-kasetka').addEventListener('click', () => {
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = getDBData(user);
+        data.kasetka = parseFloat(kasetkaInputValue.value || 0).toFixed(2);
+        data.lastMove = `Edycja kasetki: ${data.kasetka} zł`;
+        saveDBData(user, data);
+        modalKasetka.style.display = 'none';
+    });
+
+    // 3. OTWARCIE KONTENERA: KAMERA QR
+    let html5QrCode = null;
+    tileScanner.addEventListener('click', () => {
+        modalScanner.style.display = 'flex';
+        if (html5QrCode) return;
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => {
+                modalScanner.style.display = 'none';
+                html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
+                const user = sessionStorage.getItem('bmcredo_logged_user');
+                const data = getDBData(user);
+                data.loans.push({
+                    code: `QR-${Math.floor(Math.random()*900+100)}`,
+                    name: `Skan: ${decodedText}`,
+                    amount: '100.00',
+                    interest: '5',
+                    dataWpisu: new Date().toLocaleDateString(),
+                    date: new Date().toISOString(),
+                    splacone: false
+                });
+                data.lastMove = `Zeskanowano QR`;
+                saveDBData(user, data);
+            },
+            () => {}
+        ).catch(() => {
+            alert("Błąd dostępu do kamery.");
+            modalScanner.style.display = 'none';
+        });
+    });
+
+    // 4. OTWARCIE KONTENERA: RAPORT DOBOWY (Zamiast A4)
+    tileReport.addEventListener('click', () => {
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = getDBData(user);
+        const activeLoans = data.loans.filter(l => !l.splacone);
+        const totalObieg = activeLoans.reduce((acc, l) => acc + parseFloat(l.amount), 0);
+
+        let html = `
+            <strong>RAPORT DOBOWY - BMCREDO</strong><br>
+            Użytkownik: ${user}<br>
+            Data: ${new Date().toLocaleString()}<br>
+            ========================================<br>
+            Stan kasetki: ${data.kasetka} zł<br>
+            Aktywne pożyczki w obieg: ${activeLoans.length} szt.<br>
+            Suma w obieg: ${totalObieg.toFixed(2)} zł<br>
+            ========================================<br>
+            <b>SZCZEGÓŁY AKTYWNYCH POŻYCZEK:</b><br>
+        `;
+
+        activeLoans.forEach((l, i) => {
+            html += `${i+1}. [${l.code}] ${l.name} - ${l.amount} zł (Odsetki: ${l.interest}%)<br>`;
+        });
+
+        reportContent.innerHTML = html;
+        modalReport.style.display = 'flex';
+    });
+
+    // Terminal
     function handleTerminalAction() {
         const val = terminalInput.value.trim();
         if (!val) return;
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = getDBData(user);
-
         data.loans.push({
             code: val.toUpperCase(),
-            name: `Dokument / Kod ${val}`,
-            amount: '100.00',
-            odKiedy: 'Od dzisiaj',
+            name: `Terminal: ${val}`,
+            amount: '50.00',
+            interest: '5',
+            dataWpisu: new Date().toLocaleDateString(),
             date: new Date().toISOString(),
-            splacone: false,
-            type: 'minus'
+            splacone: false
         });
-        data.lastMove = `Kod: ${val}`;
+        data.lastMove = `Kod terminala: ${val}`;
         saveDBData(user, data);
         terminalInput.value = '';
     }
@@ -211,49 +344,4 @@ document.addEventListener('DOMContentLoaded', () => {
         data.lastMove = `Zmieniono status: ${data.loans[index].name}`;
         saveDBData(user, data);
     };
-
-    // Skaner QR obsługa
-    let html5QrCode = null;
-    tileScanner.addEventListener('click', () => {
-        scannerModal.style.display = 'flex';
-        if (html5QrCode) return;
-        html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 220, height: 220 } },
-            (decodedText) => {
-                scannerModal.style.display = 'none';
-                html5QrCode.stop();
-                html5QrCode = null;
-                const user = sessionStorage.getItem('bmcredo_logged_user');
-                const data = getDBData(user);
-                data.loans.push({
-                    code: `QR-${decodedText.substring(0,6)}`,
-                    name: `Skan: ${decodedText}`,
-                    amount: '50.00',
-                    odKiedy: 'Od dzisiaj',
-                    date: new Date().toISOString(),
-                    splacone: false,
-                    type: 'minus'
-                });
-                data.lastMove = `Zeskanowano QR`;
-                saveDBData(user, data);
-            },
-            () => {}
-        ).catch(() => {
-            alert("Błąd dostępu do kamery.");
-            scannerModal.style.display = 'none';
-        });
-    });
-
-    btnCloseScanner.addEventListener('click', () => {
-        scannerModal.style.display = 'none';
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
-        }
-    });
-
-    tileReport.addEventListener('click', () => {
-        alert("Generowanie raportu A4 – funkcja widoku Retro POS gotowa.");
-    });
 });

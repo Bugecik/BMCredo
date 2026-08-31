@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BMCredo - Kasa Retro POS</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Biblioteka do obsługi skanera oraz generowania kodów QR na paragonie -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
-    <!-- EKRAN LOGOWANIA / REJESTRACJI (Zabezpieczenie przed obcymi) -->
+    <!-- EKRAN LOGOWANIA -->
     <div id="auth-overlay" class="auth-container">
         <div class="auth-box">
             <h2>[ BMCredo ]</h2>
             <p>Zaloguj się, aby uzyskać dostęp do bazy.</p>
-            
             <div id="auth-error" class="error-msg"></div>
-
             <form id="auth-form">
                 <div class="input-group">
                     <label>Login</label>
@@ -26,7 +26,6 @@
                     <label>Hasło</label>
                     <input type="password" id="password" required autocomplete="current-password">
                 </div>
-                
                 <div class="auth-buttons">
                     <button type="submit" class="btn primary">Zaloguj</button>
                     <button type="button" id="btn-register" class="btn secondary">Rejestracja</button>
@@ -35,7 +34,7 @@
         </div>
     </div>
 
-    <!-- GŁÓWNA APLIKACJA RETRO POS -->
+    <!-- GŁÓWNA APLIKACJA -->
     <div id="app-container" class="main-wrapper" style="display: none;">
         
         <!-- LEWY PANEL STEROWANIA -->
@@ -47,8 +46,8 @@
                     <div class="tile-number" id="count-active">0</div>
                     <div class="tile-label">+ POŻYCZKA</div>
                 </div>
-                <div class="tile">
-                    <div class="tile-number" id="total-kasetka">0 zł</div>
+                <div class="tile" id="tile-kasetka">
+                    <div class="tile-number" id="total-kasetka">1000 zł</div>
                     <div class="tile-label">KASETKA</div>
                 </div>
                 <div class="tile" id="tile-scanner">
@@ -57,7 +56,7 @@
                 </div>
                 <div class="tile" id="tile-report">
                     <div class="tile-icon">📄</div>
-                    <div class="tile-label">RAPORT A4</div>
+                    <div class="tile-label">RAPORT DOBOWY</div>
                 </div>
             </div>
 
@@ -68,14 +67,12 @@
 
             <div class="ostatni-ruch">
                 <div class="ostatni-tytul">OSTATNI RUCH:</div>
-                <div id="last-move-text" class="ostatni-tresc">Brak aktywności</div>
+                <div id="last-move-text" class="ostatni-tresc">Brak</div>
             </div>
         </aside>
 
-        <!-- PRAWY PANEL GLÓWNY -->
+        <!-- PRAWY PANEL -->
         <main class="content-panel">
-            
-            <!-- ZAKŁADKI -->
             <nav class="tabs-bar">
                 <button class="tab-btn active" data-tab="do-splaty">DO SPŁATY</button>
                 <button class="tab-btn" data-tab="odsetki">ODSETKI (>14 DNI)</button>
@@ -83,21 +80,10 @@
                 <button class="tab-btn" data-tab="splacone">SPŁACONE</button>
             </nav>
 
-            <!-- LISTA POZYCJI -->
             <section class="list-container" id="loans-list">
-                <!-- Dynamiczne wpisy -->
+                <!-- Wpisy -->
             </section>
 
-            <!-- OKIENKO SKANERA KAMERY (UKRYTE DOMYŚLNIE) -->
-            <div id="scanner-modal" class="scanner-modal" style="display:none;">
-                <div class="scanner-content">
-                    <h3>Skanowanie kodu kamery</h3>
-                    <div id="reader" style="width: 100%; max-width: 350px;"></div>
-                    <button id="btn-close-scanner" class="btn secondary" style="margin-top: 10px;">Zamknij kamerę</button>
-                </div>
-            </div>
-
-            <!-- DOLNY PAS TERMINALA -->
             <footer class="terminal-footer">
                 <div class="terminal-input-wrap">
                     <span class="prompt-symbol">></span>
@@ -108,8 +94,92 @@
                     W OBIEGU: <span id="total-w-obiegu">0.00 zł</span>
                 </div>
             </footer>
-
         </main>
+    </div>
+
+    <!-- === KONTENERY / MODALE (OKIENKA) === -->
+
+    <!-- 1. MODAL DODAWANIA POŻYCZKI & PARAGON -->
+    <div id="modal-loan" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h3>[ NOWA POŻYCZKA ]</h3>
+            <form id="loan-form">
+                <div class="input-group">
+                    <label>Kto bierze (Imię i Nazwisko / Firma):</label>
+                    <input type="text" id="loan-person" required placeholder="np. Urszula Bugajska">
+                </div>
+                <div class="input-group">
+                    <label>Kwota (zł):</label>
+                    <input type="number" step="0.01" id="loan-amount" required placeholder="100">
+                </div>
+                <div class="input-group">
+                    <label>Odsetki po 14 dniach (%):</label>
+                    <input type="number" step="0.1" id="loan-interest" value="5" placeholder="5">
+                </div>
+                <div class="auth-buttons">
+                    <button type="submit" class="btn primary">ZAPISZ I GENERUJ PARAGON</button>
+                    <button type="button" class="btn secondary close-modal">ANULUJ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. MODAL PARAGONU Z KODEM QR -->
+    <div id="modal-receipt" class="modal" style="display:none;">
+        <div class="modal-box receipt-box">
+            <h3>*** PARAGON / UMOWA ***</h3>
+            <div id="receipt-content" style="margin: 15px 0; font-size: 0.85rem; line-height: 1.4;">
+                <!-- Dane paragonu -->
+            </div>
+            <div id="qrcode" style="display: flex; justify-content: center; margin: 15px 0; background: white; padding: 10px;"></div>
+            <button type="button" class="btn primary close-modal" style="width:100%;">ZAMKNIJ PARAGON</button>
+        </div>
+    </div>
+
+    <!-- 3. MODAL KASETKI -->
+    <div id="modal-kasetka" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h3>[ ZARZĄDZANIE KASETKĄ ]</h3>
+            <p style="font-size:0.8rem; margin-bottom:15px;">Aktualny stan gotówki w kasetce:</p>
+            <div class="input-group">
+                <input type="number" step="0.01" id="kasetka-input-value">
+            </div>
+            <p style="font-size:0.75rem; color:#88c0d0; margin-bottom:10px;">Szybkie dodaj do kasetki:</p>
+            <div class="quick-cash-grid">
+                <button type="button" class="btn-cash" data-val="10">+10 zł</button>
+                <button type="button" class="btn-cash" data-val="20">+20 zł</button>
+                <button type="button" class="btn-cash" data-val="50">+50 zł</button>
+                <button type="button" class="btn-cash" data-val="100">+100 zł</button>
+                <button type="button" class="btn-cash" data-val="200">+200 zł</button>
+            </div>
+            <div class="auth-buttons" style="margin-top:20px;">
+                <button type="button" id="save-kasetka" class="btn primary">ZAPISZ</button>
+                <button type="button" class="btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL SKANERA QR -->
+    <div id="modal-scanner" class="modal" style="display:none;">
+        <div class="modal-box">
+            <h3>[ SKANER KAMERY QR ]</h3>
+            <div id="reader" style="width: 100%; max-width: 320px; margin: 10px auto;"></div>
+            <button type="button" class="btn secondary close-modal" id="stop-scanner-btn" style="width:100%; margin-top:10px;">ZAMKNIJ SKANER</button>
+        </div>
+    </div>
+
+    <!-- 5. MODAL RAPORTU DOBOWEGO -->
+    <div id="modal-report" class="modal" style="display:none;">
+        <div class="modal-box a4-report-box">
+            <h3>[ RAPORT DOBOWY - A4 ]</h3>
+            <div id="report-content" class="report-paper">
+                <!-- Wypełniane dynamicznie -->
+            </div>
+            <div class="auth-buttons" style="margin-top:15px;">
+                <button type="button" onclick="window.print()" class="btn primary">DRUKUJ RAPORT</button>
+                <button type="button" class="btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

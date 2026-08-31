@@ -15,352 +15,126 @@ body {
 /* EKRAN LOGOWANIA */
 .auth-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(20, 24, 18, 0.95);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: flex; justify-content: center; align-items: center;
     z-index: 9999;
 }
 
 .auth-box {
-    background: #374032;
-    padding: 30px;
-    border: 2px solid #526349;
-    width: 100%;
-    max-width: 380px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    background: #374032; padding: 30px; border: 2px solid #526349;
+    width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
-.auth-box h2 {
-    color: #ebcb8b;
-    text-align: center;
-    margin-bottom: 5px;
-    letter-spacing: 2px;
-}
+.auth-box h2 { color: #ebcb8b; text-align: center; margin-bottom: 5px; letter-spacing: 2px; }
+.auth-box p { font-size: 0.8rem; color: #88c0d0; text-align: center; margin-bottom: 20px; }
 
-.auth-box p {
-    font-size: 0.8rem;
-    color: #88c0d0;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.input-group {
-    margin-bottom: 15px;
-}
-
-.input-group label {
-    display: block;
-    font-size: 0.8rem;
-    margin-bottom: 5px;
-    color: #d8dee9;
-}
-
+.input-group { margin-bottom: 15px; }
+.input-group label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: #d8dee9; }
 .input-group input {
-    width: 100%;
-    padding: 8px;
-    background: #242b21;
-    border: 1px solid #526349;
-    color: #ebcb8b;
-    font-size: 0.9rem;
+    width: 100%; padding: 8px; background: #242b21;
+    border: 1px solid #526349; color: #ebcb8b; font-size: 0.9rem;
 }
 
-.auth-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
+.auth-buttons { display: flex; gap: 10px; margin-top: 20px; }
 .btn {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #526349;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 0.85rem;
+    flex: 1; padding: 8px; border: 1px solid #526349;
+    cursor: pointer; font-weight: bold; font-size: 0.85rem;
 }
+.btn.primary { background-color: #434c5e; color: #ebcb8b; }
+.btn.secondary { background-color: #2e352b; color: #d8dee9; }
+.error-msg { color: #bf616a; font-size: 0.8rem; text-align: center; margin-bottom: 10px; }
 
-.btn.primary {
-    background-color: #434c5e;
-    color: #ebcb8b;
-}
+/* UKŁAD GŁÓWNY POS */
+.main-wrapper { display: flex; width: 100vw; height: 100vh; background: #242b21; }
 
-.btn.secondary {
-    background-color: #2e352b;
-    color: #d8dee9;
-}
-
-.error-msg {
-    color: #bf616a;
-    font-size: 0.8rem;
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-/* GŁÓWNY UKŁAD POS - DWA PANELE OBOK SIEBIE */
-.main-wrapper {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    background: #242b21;
-}
-
-/* LEWY PANEL (STAŁA SZEROKOŚĆ) */
 .sidebar {
-    width: 340px;
-    min-width: 340px;
-    background: #2b3327;
-    border-right: 3px solid #1f231c;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-    gap: 12px;
-    height: 100vh;
-    overflow-y: auto;
+    width: 340px; min-width: 340px; background: #2b3327;
+    border-right: 3px solid #1f231c; display: flex; flex-direction: column;
+    padding: 15px; gap: 12px; height: 100vh; overflow-y: auto;
 }
 
 .panel-header {
-    background: #374032;
-    border: 2px solid #526349;
-    padding: 12px;
-    text-align: center;
-    font-weight: bold;
-    color: #ebcb8b;
-    letter-spacing: 1px;
+    background: #374032; border: 2px solid #526349; padding: 12px;
+    text-align: center; font-weight: bold; color: #ebcb8b; letter-spacing: 1px;
 }
 
-.grid-tiles {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
+.grid-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .tile {
-    background: #374032;
-    border: 2px solid #526349;
-    padding: 15px 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.1s;
+    background: #374032; border: 2px solid #526349; padding: 15px 10px;
+    text-align: center; cursor: pointer; transition: 0.1s;
 }
-
-.tile:hover {
-    border-color: #ebcb8b;
-    background: #3f4b3a;
-}
-
-.tile-number {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #ebcb8b;
-    margin-bottom: 5px;
-}
-
-.tile-label {
-    font-size: 0.65rem;
-    color: #a3be8c;
-    letter-spacing: 1px;
-}
-
-.tile-icon {
-    font-size: 1.2rem;
-    margin-bottom: 5px;
-}
+.tile:hover { border-color: #ebcb8b; background: #3f4b3a; }
+.tile-number { font-size: 1.2rem; font-weight: bold; color: #ebcb8b; margin-bottom: 5px; }
+.tile-label { font-size: 0.65rem; color: #a3be8c; letter-spacing: 1px; }
+.tile-icon { font-size: 1.2rem; margin-bottom: 5px; }
 
 .user-control-box {
-    font-size: 0.75rem;
-    padding: 8px;
-    background: #242b21;
-    border: 1px solid #434c5e;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    font-size: 0.75rem; padding: 8px; background: #242b21;
+    border: 1px solid #434c5e; display: flex; justify-content: space-between; align-items: center;
 }
+.btn-text { background: none; border: none; color: #bf616a; cursor: pointer; font-size: 0.75rem; }
 
-.btn-text {
-    background: none;
-    border: none;
-    color: #bf616a;
-    cursor: pointer;
-    font-size: 0.75rem;
-}
+.ostatni-ruch { background: #1f231c; border: 2px solid #374032; padding: 10px; }
+.ostatni-tytul { font-size: 0.65rem; color: #88c0d0; margin-bottom: 5px; }
+.ostatni-tresc { font-size: 0.8rem; color: #ebcb8b; word-break: break-all; }
 
-.ostatni-ruch {
-    background: #1f231c;
-    border: 2px solid #374032;
-    padding: 10px;
-}
+.content-panel { flex: 1; display: flex; flex-direction: column; height: 100vh; background: #242b21; overflow: hidden; }
 
-.ostatni-tytul {
-    font-size: 0.65rem;
-    color: #88c0d0;
-    margin-bottom: 5px;
-}
-
-.ostatni-tresc {
-    font-size: 0.8rem;
-    color: #ebcb8b;
-    word-break: break-all;
-}
-
-/* PRAWY PANEL (ZAJMUJE RESZTĘ MIEJSCA) */
-.content-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    background: #242b21;
-    overflow: hidden;
-}
-
-.tabs-bar {
-    display: flex;
-    background: #2b3327;
-    border-bottom: 3px solid #1f231c;
-    padding: 10px;
-    gap: 8px;
-}
-
+.tabs-bar { display: flex; background: #2b3327; border-bottom: 3px solid #1f231c; padding: 10px; gap: 8px; }
 .tab-btn {
-    background: #374032;
-    border: 2px solid #526349;
-    color: #a3be8c;
-    padding: 8px 15px;
-    cursor: pointer;
-    font-size: 0.75rem;
-    font-weight: bold;
+    background: #374032; border: 2px solid #526349; color: #a3be8c;
+    padding: 8px 15px; cursor: pointer; font-size: 0.75rem; font-weight: bold;
 }
+.tab-btn.active { background: #ebcb8b; color: #242b21; border-color: #f0f4f8; }
 
-.tab-btn.active {
-    background: #ebcb8b;
-    color: #242b21;
-    border-color: #f0f4f8;
-}
+.list-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
 
-.list-container {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-/* KAFELEK POŻYCZKI NA LIŚCIE */
 .loan-card {
-    background: #374032;
-    border: 2px solid #526349;
-    padding: 12px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: #374032; border: 2px solid #526349; padding: 12px 15px;
+    display: flex; justify-content: space-between; align-items: center;
 }
+.loan-card.splacone-card { opacity: 0.6; }
+.loan-title { font-size: 0.95rem; font-weight: bold; color: #ebcb8b; }
+.loan-sub { font-size: 0.7rem; color: #8fbcbb; margin-top: 3px; }
+.loan-right { text-align: right; }
+.loan-amount { font-size: 1rem; font-weight: bold; color: #bf616a; }
+.loan-status { font-size: 0.7rem; margin-top: 3px; font-weight: bold; }
 
-.loan-card.splacone-card {
-    opacity: 0.6;
-}
-
-.loan-title {
-    font-size: 0.95rem;
-    font-weight: bold;
-    color: #ebcb8b;
-}
-
-.loan-sub {
-    font-size: 0.7rem;
-    color: #8fbcbb;
-    margin-top: 3px;
-}
-
-.loan-right {
-    text-align: right;
-}
-
-.loan-amount {
-    font-size: 1rem;
-    font-weight: bold;
-    color: #bf616a;
-}
-
-.loan-amount.plus {
-    color: #a3be8c;
-}
-
-.loan-status {
-    font-size: 0.7rem;
-    margin-top: 3px;
-    font-weight: bold;
-}
-
-/* DOLNY TERMINAL */
 .terminal-footer {
-    background: #2b3327;
-    border-top: 3px solid #1f231c;
-    padding: 12px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: #2b3327; border-top: 3px solid #1f231c; padding: 12px 15px;
+    display: flex; justify-content: space-between; align-items: center;
 }
-
 .terminal-input-wrap {
-    display: flex;
-    align-items: center;
-    background: #1f231c;
-    border: 2px solid #374032;
-    padding: 6px 12px;
-    flex: 1;
-    max-width: 600px;
-    margin-right: 20px;
+    display: flex; align-items: center; background: #1f231c;
+    border: 2px solid #374032; padding: 6px 12px; flex: 1; max-width: 600px; margin-right: 20px;
 }
+.prompt-symbol { color: #ebcb8b; font-weight: bold; margin-right: 8px; }
+.terminal-input-wrap input { background: none; border: none; color: #ebcb8b; outline: none; width: 100%; font-size: 0.85rem; }
+.terminal-btn { background: #ebcb8b; border: none; color: #242b21; font-weight: bold; padding: 4px 10px; cursor: pointer; font-size: 0.75rem; }
+.terminal-bieg { font-size: 0.8rem; font-weight: bold; color: #ebcb8b; }
 
-.prompt-symbol {
-    color: #ebcb8b;
-    font-weight: bold;
-    margin-right: 8px;
+/* MODALE (OKIENKA) */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 2000;
 }
+.modal-box {
+    background: #374032; padding: 25px; border: 2px solid #ebcb8b; width: 100%; max-width: 420px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.9); color: #a3be8c;
+}
+.modal-box h3 { color: #ebcb8b; margin-bottom: 15px; text-align: center; }
 
-.terminal-input-wrap input {
-    background: none;
-    border: none;
-    color: #ebcb8b;
-    outline: none;
-    width: 100%;
-    font-size: 0.85rem;
-}
+.quick-cash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.btn-cash { background: #2b3327; border: 1px solid #526349; color: #ebcb8b; padding: 8px; cursor: pointer; font-weight: bold; }
+.btn-cash:hover { background: #434c5e; }
 
-.terminal-btn {
-    background: #ebcb8b;
-    border: none;
-    color: #242b21;
-    font-weight: bold;
-    padding: 4px 10px;
-    cursor: pointer;
-    font-size: 0.75rem;
-}
+.receipt-box { max-width: 350px; background: #fff; color: #111; font-family: monospace; }
+.receipt-box h3 { color: #111; border-bottom: 1px dashed #333; padding-bottom: 5px; }
 
-.terminal-bieg {
-    font-size: 0.8rem;
-    font-weight: bold;
-    color: #ebcb8b;
-}
-
-/* OKIENKO KAMERY */
-.scanner-modal {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-.scanner-content {
-    background: #374032;
-    padding: 20px;
-    border: 2px solid #ebcb8b;
-    text-align: center;
+.a4-report-box { max-width: 600px; }
+.report-paper {
+    background: #fff; color: #111; padding: 20px; font-family: monospace; font-size: 0.85rem;
+    max-height: 350px; overflow-y: auto; border: 1px solid #ccc;
 }
