@@ -3,67 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BMCredo</title>
+    <title>BMCredo - Kasa Retro POS</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
-    <!-- EKRAN LOGOWANIA / REJESTRACJI -->
+    <!-- EKRAN LOGOWANIA / REJESTRACJI (Zabezpieczenie przed obcymi) -->
     <div id="auth-overlay" class="auth-container">
         <div class="auth-box">
-            <h2>BMCredo</h2>
-            <p>Zaloguj się, aby uzyskać dostęp do aplikacji.</p>
+            <h2>[ BMCredo ]</h2>
+            <p>Zaloguj się, aby uzyskać dostęp do bazy.</p>
             
             <div id="auth-error" class="error-msg"></div>
 
             <form id="auth-form">
                 <div class="input-group">
-                    <label for="username">Nazwa użytkownika</label>
+                    <label>Login</label>
                     <input type="text" id="username" required autocomplete="username">
                 </div>
                 <div class="input-group">
-                    <label for="password">Hasło</label>
+                    <label>Hasło</label>
                     <input type="password" id="password" required autocomplete="current-password">
                 </div>
                 
                 <div class="auth-buttons">
-                    <button type="submit" id="btn-login" class="btn primary">Zaloguj się</button>
-                    <button type="button" id="btn-register" class="btn secondary">Zarejestruj się</button>
+                    <button type="submit" class="btn primary">Zaloguj</button>
+                    <button type="button" id="btn-register" class="btn secondary">Rejestracja</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- WŁAŚCIWA APLIKACJA -->
-    <div id="app-container" style="display: none;">
-        <header>
-            <h1>BMCredo</h1>
-            <div class="user-info">
-                Zalogowany jako: <span id="current-user-display"></span>
-                <button id="btn-logout" class="btn logout">Wyloguj</button>
+    <!-- GŁÓWNA APLIKACJA RETRO POS -->
+    <div id="app-container" class="main-wrapper" style="display: none;">
+        
+        <!-- LEWY PANEL STEROWANIA -->
+        <aside class="sidebar">
+            <div class="panel-header">[ KASA RETRO POS ]</div>
+            
+            <div class="grid-tiles">
+                <div class="tile" id="tile-add-loan">
+                    <div class="tile-number" id="count-active">0</div>
+                    <div class="tile-label">+ POŻYCZKA</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-number" id="total-kasetka">0 zł</div>
+                    <div class="tile-label">KASETKA</div>
+                </div>
+                <div class="tile" id="tile-scanner">
+                    <div class="tile-icon">📷</div>
+                    <div class="tile-label">KAMERA QR</div>
+                </div>
+                <div class="tile" id="tile-report">
+                    <div class="tile-icon">📄</div>
+                    <div class="tile-label">RAPORT A4</div>
+                </div>
             </div>
-        </header>
 
-        <main class="kasa-layout">
-            <section class="panel-produkty">
-                <h2>Skaner / Produkty</h2>
-                <div id="reader" style="width: 100%; max-width: 400px; margin-bottom: 20px;"></div>
-                <button id="btn-start-scanner" class="btn primary">Włącz Skaner Kamery</button>
+            <div class="user-control-box">
+                Zalogowany: <span id="current-user-display" style="color: #a3be8c;"></span>
+                <button id="btn-logout" class="btn-text">[wyloguj]</button>
+            </div>
+
+            <div class="ostatni-ruch">
+                <div class="ostatni-tytul">OSTATNI RUCH:</div>
+                <div id="last-move-text" class="ostatni-tresc">Brak aktywności</div>
+            </div>
+        </aside>
+
+        <!-- PRAWY PANEL GLÓWNY -->
+        <main class="content-panel">
+            
+            <!-- ZAKŁADKI -->
+            <nav class="tabs-bar">
+                <button class="tab-btn active" data-tab="do-splaty">DO SPŁATY</button>
+                <button class="tab-btn" data-tab="odsetki">ODSETKI (>14 DNI)</button>
+                <button class="tab-btn" data-tab="wszyscy">WSZYSCY</button>
+                <button class="tab-btn" data-tab="splacone">SPŁACONE</button>
+            </nav>
+
+            <!-- LISTA POZYCJI -->
+            <section class="list-container" id="loans-list">
+                <!-- Dynamiczne wpisy -->
             </section>
 
-            <section class="panel-koszyk">
-                <h2>Twoje Dane</h2>
-                <div class="koszyk-lista" id="cart-items">
-                    <p class="puste">Brak pozycji.</p>
+            <!-- OKIENKO SKANERA KAMERY (UKRYTE DOMYŚLNIE) -->
+            <div id="scanner-modal" class="scanner-modal" style="display:none;">
+                <div class="scanner-content">
+                    <h3>Skanowanie kodu kamery</h3>
+                    <div id="reader" style="width: 100%; max-width: 350px;"></div>
+                    <button id="btn-close-scanner" class="btn secondary" style="margin-top: 10px;">Zamknij kamerę</button>
                 </div>
-                <div class="koszyk-podsumowanie">
-                    <button id="btn-add-sample" class="btn secondary">Dodaj testowy wpis</button>
+            </div>
+
+            <!-- DOLNY PAS TERMINALA -->
+            <footer class="terminal-footer">
+                <div class="terminal-input-wrap">
+                    <span class="prompt-symbol">></span>
+                    <input type="text" id="terminal-input" placeholder="WPISZ KOD (P-101) LUB SKANUJ...">
+                    <button id="terminal-enter" class="terminal-btn">ENTER</button>
                 </div>
-            </section>
+                <div class="terminal-bieg">
+                    W OBIEGU: <span id="total-w-obiegu">0.00 zł</span>
+                </div>
+            </footer>
+
         </main>
     </div>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js"></script>
 </body>
 </html>

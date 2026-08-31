@@ -6,18 +6,20 @@
 }
 
 body {
-    background-color: #121212;
-    color: #e0e0e0;
-    min-height: 100vh;
+    background-color: #2e352b;
+    color: #a3be8c;
+    height: 100vh;
+    overflow: hidden;
 }
 
+/* EKRAN LOGOWANIA */
 .auth-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #0b0b0b;
+    background-color: rgba(20, 24, 18, 0.95);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -25,27 +27,26 @@ body {
 }
 
 .auth-box {
-    background: #1e1e1e;
+    background: #374032;
     padding: 30px;
-    border: 2px solid #333;
-    border-radius: 8px;
+    border: 2px solid #526349;
     width: 100%;
-    max-width: 400px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    max-width: 380px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 .auth-box h2 {
-    margin-bottom: 10px;
-    color: #4CAF50;
+    color: #ebcb8b;
     text-align: center;
+    margin-bottom: 5px;
     letter-spacing: 2px;
 }
 
 .auth-box p {
-    font-size: 0.9rem;
-    margin-bottom: 20px;
-    color: #aaa;
+    font-size: 0.8rem;
+    color: #88c0d0;
     text-align: center;
+    margin-bottom: 20px;
 }
 
 .input-group {
@@ -54,17 +55,18 @@ body {
 
 .input-group label {
     display: block;
+    font-size: 0.8rem;
     margin-bottom: 5px;
-    font-size: 0.85rem;
+    color: #d8dee9;
 }
 
 .input-group input {
     width: 100%;
-    padding: 10px;
-    background: #2c2c2c;
-    border: 1px solid #444;
-    color: #fff;
-    border-radius: 4px;
+    padding: 8px;
+    background: #242b21;
+    border: 1px solid #526349;
+    color: #ebcb8b;
+    font-size: 0.9rem;
 }
 
 .auth-buttons {
@@ -75,94 +77,286 @@ body {
 
 .btn {
     flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
+    padding: 8px;
+    border: 1px solid #526349;
     cursor: pointer;
     font-weight: bold;
+    font-size: 0.85rem;
 }
 
 .btn.primary {
-    background-color: #4CAF50;
-    color: white;
+    background-color: #434c5e;
+    color: #ebcb8b;
 }
 
 .btn.secondary {
-    background-color: #333;
-    color: #ddd;
-    border: 1px solid #555;
-}
-
-.btn.logout {
-    background-color: #d32f2f;
-    color: white;
-    padding: 5px 10px;
-    flex: unset;
+    background-color: #2e352b;
+    color: #d8dee9;
 }
 
 .error-msg {
-    color: #ff5252;
-    font-size: 0.85rem;
-    margin-bottom: 15px;
+    color: #bf616a;
+    font-size: 0.8rem;
     text-align: center;
+    margin-bottom: 10px;
 }
 
-header {
-    background: #1a1a1a;
-    padding: 15px 30px;
+/* GŁÓWNY UKŁAD POS */
+.main-wrapper {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #333;
+    height: 100vh;
+    border: 4px solid #1f231c;
+    background: #242b21;
 }
 
-header h1 {
-    color: #4CAF50;
-    letter-spacing: 1px;
-}
-
-.user-info {
+/* LEWY PANEL */
+.sidebar {
+    width: 320px;
+    background: #2b3327;
+    border-right: 3px solid #1f231c;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    padding: 15px;
     gap: 15px;
 }
 
-.kasa-layout {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 20px;
-    gap: 20px;
+.panel-header {
+    background: #374032;
+    border: 2px solid #526349;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: #ebcb8b;
+    letter-spacing: 1px;
 }
 
-section {
-    background: #181818;
-    border: 1px solid #2a2a2a;
-    border-radius: 6px;
-    padding: 20px;
-    flex: 1;
-    min-width: 300px;
+.grid-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
 }
 
-section h2 {
-    margin-bottom: 15px;
-    font-size: 1.2rem;
-    border-bottom: 1px solid #333;
-    padding-bottom: 8px;
+.tile {
+    background: #374032;
+    border: 2px solid #526349;
+    padding: 15px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.1s;
 }
 
-.koszyk-lista {
-    min-height: 150px;
-    max-height: 300px;
-    overflow-y: auto;
-    background: #111;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 15px;
+.tile:hover {
+    border-color: #ebcb8b;
+    background: #3f4b3a;
 }
 
-.item {
+.tile-number {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #ebcb8b;
+    margin-bottom: 5px;
+}
+
+.tile-label {
+    font-size: 0.7rem;
+    color: #a3be8c;
+    letter-spacing: 1px;
+}
+
+.tile-icon {
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+}
+
+.user-control-box {
+    font-size: 0.75rem;
     padding: 8px;
-    border-bottom: 1px dashed #333;
+    background: #242b21;
+    border: 1px solid #434c5e;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: #bf616a;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.ostatni-ruch {
+    margin-top: auto;
+    background: #1f231c;
+    border: 2px solid #374032;
+    padding: 10px;
+}
+
+.ostatni-tytul {
+    font-size: 0.65rem;
+    color: #88c0d0;
+    margin-bottom: 5px;
+}
+
+.ostatni-tresc {
+    font-size: 0.8rem;
+    color: #ebcb8b;
+    word-break: break-all;
+}
+
+/* PRAWY PANEL */
+.content-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #242b21;
+}
+
+.tabs-bar {
+    display: flex;
+    background: #2b3327;
+    border-bottom: 3px solid #1f231c;
+    padding: 10px;
+    gap: 8px;
+}
+
+.tab-btn {
+    background: #374032;
+    border: 2px solid #526349;
+    color: #a3be8c;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.tab-btn.active {
+    background: #ebcb8b;
+    color: #242b21;
+    border-color: #f0f4f8;
+}
+
+.list-container {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* KAFELEK POŻYCZKI NA LIŚCIE */
+.loan-card {
+    background: #374032;
+    border: 2px solid #526349;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.loan-card.splacone-card {
+    opacity: 0.6;
+}
+
+.loan-title {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #ebcb8b;
+}
+
+.loan-sub {
+    font-size: 0.7rem;
+    color: #8fbcbb;
+    margin-top: 3px;
+}
+
+.loan-right {
+    text-align: right;
+}
+
+.loan-amount {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #bf616a;
+}
+
+.loan-amount.plus {
+    color: #a3be8c;
+}
+
+.loan-status {
+    font-size: 0.7rem;
+    margin-top: 3px;
+    font-weight: bold;
+}
+
+/* DOLNY TERMINAL */
+.terminal-footer {
+    background: #2b3327;
+    border-top: 3px solid #1f231c;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.terminal-input-wrap {
+    display: flex;
+    align-items: center;
+    background: #1f231c;
+    border: 2px solid #374032;
+    padding: 6px 12px;
+    flex: 1;
+    max-width: 600px;
+    margin-right: 20px;
+}
+
+.prompt-symbol {
+    color: #ebcb8b;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.terminal-input-wrap input {
+    background: none;
+    border: none;
+    color: #ebcb8b;
+    outline: none;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.terminal-btn {
+    background: #ebcb8b;
+    border: none;
+    color: #242b21;
+    font-weight: bold;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.terminal-bieg {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ebcb8b;
+}
+
+/* OKIENKO KAMERY */
+.scanner-modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.scanner-content {
+    background: #374032;
+    padding: 20px;
+    border: 2px solid #ebcb8b;
+    text-align: center;
 }
