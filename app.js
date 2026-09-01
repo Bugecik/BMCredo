@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (doc.exists) {
                     currentData = doc.data();
                     if (!currentData.goals) currentData.goals = [];
+                    if (!currentData.loans) currentData.loans = [];
                 } else {
                     currentData = { kasetka: 1000, loans: [], goals: [], lastMove: 'Brak' };
                 }
@@ -217,9 +218,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    btnCloseDeposit.addEventListener('click', () => {
-        modalDepositGoal.style.display = 'none';
-    });
+    if (btnCloseDeposit) {
+        btnCloseDeposit.addEventListener('click', () => {
+            modalDepositGoal.style.display = 'none';
+        });
+    }
 
     // Zakładki
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -310,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGoalsList();
     }
 
-    // Renderowanie celów
+    // Renderowanie listy celów
     function renderGoalsList() {
         const goals = currentData.goals || [];
         goalsListContainer.innerHTML = '';
@@ -337,7 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="goal-progress-fill" style="width: ${percent}%;"></div>
                 </div>
                 <div class="goal-footer-row">
-                    <button onclick="window.openDepositGoalModal(${idx})" class="retro-btn" style="padding:2px 8px; font-size:0.6rem;">+ WPŁAĆ Z KASETKI</button>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="window.openDepositGoalModal(${idx})" class="retro-btn" style="padding:2px 6px; font-size:0.6rem;">+ WPŁAĆ Z KASETKI</button>
+                        <button onclick="window.withdrawGoalToKasetka(${idx})" class="retro-btn secondary" style="padding:2px 6px; font-size:0.6rem;">- DO KASETKI</button>
+                    </div>
                     <button onclick="window.deleteGoal(${idx})" style="background:none; border:none; color:#c95144; font-size:0.6rem; cursor:pointer;">[USUŃ CEL]</button>
                 </div>
             `;
@@ -345,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 1. + POŻYCZKA
+    // 1. + POŻYCZKA (Z MNIEJSZENIEM STANU KASETKI)
     tileAddLoan.addEventListener('click', () => {
         loanPerson.value = '';
         loanAmount.value = '';
@@ -360,8 +366,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const loans = data.loans || [];
 
         const person = loanPerson.value.trim();
-        const amount = parseFloat(loanAmount.value).toFixed(2);
+        const amountNum = parseFloat(loanAmount.value);
+        const amount = amountNum.toFixed(2);
         const interest = loanInterest.value;
+        const currentKasetka = parseFloat(data.kasetka || 0);
+
+        if (isNaN(amountNum) || amountNum <= 0) {
+            alert('Wpisz poprawną kwotę pożyczki!');
+            return;
+        }
+
+        if (amountNum > currentKasetka) {
+            const proceed = confirm(`Uwaga: W kasetce jest tylko ${currentKasetka.toFixed(2)} zł, a chcesz pożyczyć ${amount} zł. Czy na pewno kontynuować i wejść na ujemny stan kasy?`);
+            if (!proceed) return;
+        }
+
+        // Odejmij kwotę z kasetki (wydanie gotówki klientowi)
+        data.kasetka = (currentKasetka - amountNum).toFixed(2);
+
         const code = `P-${101 + loans.length}`;
         const shortName = person.length > 13 ? person.substring(0, 11) + '…' : person;
 
@@ -379,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loans.push(newLoan);
         data.loans = loans;
-        data.lastMove = `+ ${person} (+${amount} zł)`;
+        data.lastMove = `Pożyczka: -${amount} zł dla ${person}`;
         saveCloudData(user, data);
 
         modalLoan.style.display = 'none';
@@ -414,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalReceipt.style.display = 'flex';
     }
 
-    // 3. WPŁATA DŁUŻNIKA
+    // 3. WPŁATA DŁUŻNIKA (DODAWANIE DO KASETKI)
     window.openPaymentModal = function(index) {
         const loan = currentData.loans[index];
         paymentLoanIndex.value = index;
@@ -424,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         paymentClientInfo.innerHTML = `
             KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO: <b>${remaining} zł</b>
+            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO DO SPŁATY: <b>${remaining} zł</b>
         `;
         paymentAmountInput.value = remaining;
         paymentAmountInput.max = remaining;
@@ -450,11 +472,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPaid = currentPaid + payVal;
         loan.paidAmount = newPaid.toFixed(2);
 
+        // Zwiększ stan kasetki o przyjętą spłatę
         data.kasetka = (parseFloat(data.kasetka || 0) + payVal).toFixed(2);
 
         if (newPaid >= total) {
             loan.splacone = true;
-            data.lastMove = `Spłacono: ${loan.fullName || loan.name}`;
+            data.lastMove = `Spłacono: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
         } else {
             data.lastMove = `Wpłata: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
         }
@@ -463,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalPayment.style.display = 'none';
     });
 
-    // 4. MODUŁ CELE I WPŁATY Z KASETKI
+    // 4. MODUŁ CELE: WPŁATA, WYPŁATA I USUWANIE ZE ZWROTEM DO KASETKI
     tileGoals.addEventListener('click', () => {
         modalGoals.style.display = 'flex';
         renderGoalsList();
@@ -525,37 +548,98 @@ document.addEventListener('DOMContentLoaded', () => {
         // Odejmij z kasetki i dodaj do celu
         data.kasetka = (kasetkaStan - depAmount).toFixed(2);
         data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
-        data.lastMove = `Cel [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
+        data.lastMove = `Do celu [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
 
         saveCloudData(user, data);
         modalDepositGoal.style.display = 'none';
         renderGoalsList();
     });
 
-    window.deleteGoal = function(goalIdx) {
-        if (!confirm(`Czy usunąć cel: "${currentData.goals[goalIdx].name}"?`)) return;
+    // Wypłata środków z celu z powrotem do kasetki
+    window.withdrawGoalToKasetka = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        const currentSaved = parseFloat(goal.current || 0);
+
+        if (currentSaved <= 0) {
+            alert('W tym celu nie ma zgromadzonych środków do wypłaty!');
+            return;
+        }
+
+        const inputVal = prompt(`Ile chcesz przelać z celu "${goal.name}" z powrotem do kasetki? (Maksymalnie: ${currentSaved.toFixed(2)} zł)`, currentSaved.toFixed(2));
+        if (inputVal === null) return;
+
+        const withdrawAmount = parseFloat(inputVal);
+        if (isNaN(withdrawAmount) || withdrawAmount <= 0 || withdrawAmount > currentSaved) {
+            alert('Wpisano nieprawidłową kwotę!');
+            return;
+        }
+
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
-        data.goals.splice(goalIdx, 1);
+
+        // Odejmij z celu, dodaj do kasetki
+        data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
+        data.kasetka = (parseFloat(data.kasetka || 0) + withdrawAmount).toFixed(2);
+        data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł do kasetki`;
+
         saveCloudData(user, data);
         renderGoalsList();
     };
 
-    // 5. USUWANIE POŻYCZKI
-    window.deleteLoan = function(index) {
-        const loan = currentData.loans[index];
-        if (!confirm(`Usunąć pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`)) return;
+    // Usunięcie celu ze ZWROTEM pieniędzy do kasetki
+    window.deleteGoal = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        const savedAmount = parseFloat(goal.current || 0);
+
+        let confirmMsg = `Czy na pewno chcesz usunąć cel: "${goal.name}"?`;
+        if (savedAmount > 0) {
+            confirmMsg += `\n\nŚrodki zgromadzone w celu (${savedAmount.toFixed(2)} zł) zostaną automatycznie zwrócone do kasetki!`;
+        }
+
+        if (!confirm(confirmMsg)) return;
 
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
+
+        // Zwróć kwotę do kasetki
+        if (savedAmount > 0) {
+            data.kasetka = (parseFloat(data.kasetka || 0) + savedAmount).toFixed(2);
+        }
+
+        data.goals.splice(goalIdx, 1);
+        data.lastMove = `Usunięto cel: ${goal.name} (Zwrot: +${savedAmount.toFixed(2)} zł)`;
+        saveCloudData(user, data);
+        renderGoalsList();
+    };
+
+    // 5. USUWANIE POŻYCZKI ZE ZWROTEM DO KASETKI (KOREKTA BŁĘDNEGO WPISU)
+    window.deleteLoan = function(index) {
+        const loan = currentData.loans[index];
+        const totalLoan = parseFloat(loan.amount || 0);
+        const totalPaid = parseFloat(loan.paidAmount || 0);
+        const netAdjustment = totalLoan - totalPaid; // Różnica do wyrównania kasy
+
+        let confirmMsg = `Czy na pewno chcesz USUNĄĆ pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`;
+        if (netAdjustment !== 0) {
+            confirmMsg += `\n\nKorekta kasetki: Stan gotówki zostanie zaktualizowany o ${netAdjustment > 0 ? '+' : ''}${netAdjustment.toFixed(2)} zł (zwrot wypłaconej pożyczki pomniejszony o ewentualne wpłaty).`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+
+        // Zwróć gotówkę do kasetki
+        data.kasetka = (parseFloat(data.kasetka || 0) + netAdjustment).toFixed(2);
+
         const removed = data.loans.splice(index, 1);
-        data.lastMove = `Usunięto: ${removed[0].name}`;
+        data.lastMove = `Usunięto pożyczkę: ${removed[0].name} (Korekta kasy: +${netAdjustment.toFixed(2)} zł)`;
         saveCloudData(user, data);
     };
 
-    // 6. KASETKA
+    // 6. KASETKA - RĘCZNA EDYCJA
     tileKasetka.addEventListener('click', () => {
-        kasetkaInputValue.value = currentData.kasetka || 0;
+        kasetkaInputValue.value = parseFloat(currentData.kasetka || 0).toFixed(2);
         modalKasetka.style.display = 'flex';
     });
 
@@ -570,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         data.kasetka = parseFloat(kasetkaInputValue.value || 0).toFixed(2);
-        data.lastMove = `Kasetka: ${data.kasetka} zł`;
+        data.lastMove = `Ręczna edycja kasetki: ${data.kasetka} zł`;
         saveCloudData(user, data);
         modalKasetka.style.display = 'none';
     });
@@ -592,11 +676,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = currentData;
                 const loans = data.loans || [];
 
+                // Jeśli zeskanowano kod w formacie BMCREDO|P-101|...
+                if (decodedText.startsWith('BMCREDO|')) {
+                    const parts = decodedText.split('|');
+                    const code = parts[1];
+                    const foundIndex = loans.findIndex(l => l.code === code);
+                    if (foundIndex !== -1) {
+                        window.openPaymentModal(foundIndex);
+                        return;
+                    }
+                }
+
+                // Domyślne dodanie ze skanu QR
+                const defaultAmount = 50.00;
+                data.kasetka = (parseFloat(data.kasetka || 0) - defaultAmount).toFixed(2);
+
                 loans.push({
                     code: `P-${101 + loans.length}`,
                     name: `QR: ${decodedText.substring(0, 10)}`,
                     fullName: decodedText,
-                    amount: '50.00',
+                    amount: defaultAmount.toFixed(2),
                     paidAmount: '0.00',
                     interest: '5',
                     odKiedy: '0d TEMU',
@@ -604,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     splacone: false
                 });
                 data.loans = loans;
-                data.lastMove = `Skan: ${decodedText.substring(0, 12)}`;
+                data.lastMove = `Skan QR: -${defaultAmount.toFixed(2)} zł`;
                 saveCloudData(user, data);
             },
             () => {}
@@ -727,14 +826,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const found = loans.find(l => l.code.toUpperCase() === val.toUpperCase());
         if (found) {
-            found.splacone = !found.splacone;
-            data.lastMove = `Kod terminala: ${found.code}`;
+            const foundIndex = loans.indexOf(found);
+            window.openPaymentModal(foundIndex);
+            data.lastMove = `Wywołano: ${found.code}`;
         } else {
+            const defaultAmt = 100.00;
+            data.kasetka = (parseFloat(data.kasetka || 0) - defaultAmt).toFixed(2);
             loans.push({
                 code: val.toUpperCase(),
                 name: val.toUpperCase(),
                 fullName: `Wpis terminala: ${val}`,
-                amount: '100.00',
+                amount: defaultAmt.toFixed(2),
                 paidAmount: '0.00',
                 interest: '5',
                 odKiedy: '0d TEMU',
@@ -742,7 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 splacone: false
             });
             data.loans = loans;
-            data.lastMove = `Kod: ${val}`;
+            data.lastMove = `Terminal: -${defaultAmt.toFixed(2)} zł (${val})`;
         }
 
         saveCloudData(user, data);
