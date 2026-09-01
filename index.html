@@ -2,10 +2,10 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BMCredo - Kasa Retro POS</title>
-    <link rel="stylesheet" href="style.css?v=2">
-    <!-- Biblioteka do obsługi skanera oraz generowania kodów QR na paragonie -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>[ KASA RETRO POS ]</title>
+    <link rel="stylesheet" href="style.css?v=3">
+    <!-- QR Code & Scanner Scripts -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -14,174 +14,204 @@
     <!-- EKRAN LOGOWANIA -->
     <div id="auth-overlay" class="auth-container">
         <div class="auth-box">
-            <h2>[ BMCredo ]</h2>
-            <p>Zaloguj się, aby uzyskać dostęp do bazy.</p>
+            <div class="auth-title">[ BMCredo POS ]</div>
             <div id="auth-error" class="error-msg"></div>
+
             <form id="auth-form">
                 <div class="input-group">
-                    <label>Login</label>
+                    <label>OPERATOR:</label>
                     <input type="text" id="username" required autocomplete="username">
                 </div>
                 <div class="input-group">
-                    <label>Hasło</label>
+                    <label>KOD / HASŁO:</label>
                     <input type="password" id="password" required autocomplete="current-password">
                 </div>
                 <div class="auth-buttons">
-                    <button type="submit" class="btn primary">Zaloguj</button>
-                    <button type="button" id="btn-register" class="btn secondary">Rejestracja</button>
+                    <button type="submit" class="retro-btn">ZALOGUJ</button>
+                    <button type="button" id="btn-register" class="retro-btn secondary">REJESTRACJA</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- GŁÓWNA APLIKACJA -->
-    <div id="app-container" class="main-wrapper" style="display: none;">
+    <!-- GŁÓWNY INTERFEJS POS -->
+    <div id="app-container" class="pos-frame" style="display: none;">
         
-        <!-- LEWY PANEL STEROWANIA -->
-        <aside class="sidebar">
-            <div class="panel-header">[ KASA RETRO POS ]</div>
-            
-            <div class="grid-tiles">
-                <div class="tile" id="tile-add-loan">
-                    <div class="tile-number" id="count-active">0</div>
-                    <div class="tile-label">+ POŻYCZKA</div>
+        <!-- LEWA KOLUMNA -->
+        <aside class="pos-left-panel">
+            <div class="outer-box header-box">
+                <div class="box-label-title">[ KASA RETRO POS ]</div>
+            </div>
+
+            <div class="tiles-grid">
+                <!-- + POŻYCZKA -->
+                <div class="tile tile-olive" id="tile-add-loan">
+                    <div class="tile-val" id="count-active">0</div>
+                    <div class="tile-desc">+ POŻYCZKA</div>
                 </div>
-                <div class="tile" id="tile-kasetka">
-                    <div class="tile-number" id="total-kasetka">1000 zł</div>
-                    <div class="tile-label">KASETKA</div>
+
+                <!-- KASETKA -->
+                <div class="tile tile-sand" id="tile-kasetka">
+                    <div class="tile-val" id="total-kasetka">1000 zł</div>
+                    <div class="tile-desc">KASETKA</div>
                 </div>
-                <div class="tile" id="tile-scanner">
-                    <div class="tile-icon">📷</div>
-                    <div class="tile-label">KAMERA QR</div>
+
+                <!-- KAMERA QR -->
+                <div class="tile tile-teal" id="tile-scanner">
+                    <div class="tile-icon-svg">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                    </div>
+                    <div class="tile-desc">KAMERA QR</div>
                 </div>
-                <div class="tile" id="tile-report">
-                    <div class="tile-icon">📄</div>
-                    <div class="tile-label">RAPORT DOBOWY</div>
+
+                <!-- RAPORT A4 -->
+                <div class="tile tile-sand" id="tile-report">
+                    <div class="tile-icon-svg">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div class="tile-desc">RAPORT A4</div>
                 </div>
             </div>
 
-            <div class="user-control-box">
-                Zalogowany: <span id="current-user-display" style="color: #a3be8c;"></span>
-                <button id="btn-logout" class="btn-text">[wyloguj]</button>
-            </div>
-
-            <div class="ostatni-ruch">
-                <div class="ostatni-tytul">OSTATNI RUCH:</div>
-                <div id="last-move-text" class="ostatni-tresc">Brak</div>
+            <!-- OSTATNI RUCH & OPERATOR -->
+            <div class="outer-box last-move-box">
+                <div class="sub-label">OSTATNI RUCH:</div>
+                <div class="last-move-val" id="last-move-text">+ Brak</div>
+                <div class="user-subline">
+                    OP: <span id="current-user-display">MBugajski</span>
+                    <button id="btn-logout" class="logout-link">[WYLOGUJ]</button>
+                </div>
             </div>
         </aside>
 
-        <!-- PRAWY PANEL -->
-        <main class="content-panel">
-            <nav class="tabs-bar">
-                <button class="tab-btn active" data-tab="do-splaty">DO SPŁATY</button>
-                <button class="tab-btn" data-tab="odsetki">ODSETKI (>14 DNI)</button>
-                <button class="tab-btn" data-tab="wszyscy">WSZYSCY</button>
-                <button class="tab-btn" data-tab="splacone">SPŁACONE</button>
-            </nav>
-
-            <section class="list-container" id="loans-list">
-                <!-- Wpisy -->
-            </section>
-
-            <footer class="terminal-footer">
-                <div class="terminal-input-wrap">
-                    <span class="prompt-symbol">></span>
-                    <input type="text" id="terminal-input" placeholder="WPISZ KOD (P-101) LUB SKANUJ...">
-                    <button id="terminal-enter" class="terminal-btn">ENTER</button>
+        <!-- PRAWA KOLUMNA -->
+        <main class="pos-right-panel">
+            
+            <!-- GÓRNE ZAKŁADKI -->
+            <div class="outer-box tabs-outer">
+                <div class="tabs-container">
+                    <button class="tab-btn active" data-tab="do-splaty">DO SPŁATY</button>
+                    <button class="tab-btn" data-tab="odsetki">ODSETKI (>14 DNI)</button>
+                    <button class="tab-btn" data-tab="wszyscy">WSZYSCY</button>
+                    <button class="tab-btn" data-tab="splacone">SPŁACONE</button>
                 </div>
-                <div class="terminal-bieg">
-                    W OBIEGU: <span id="total-w-obiegu">0.00 zł</span>
+            </div>
+
+            <!-- LISTA POZYCJI -->
+            <div class="outer-box main-list-box">
+                <div class="list-scroll-area" id="loans-list">
+                    <!-- Dynamiczne kafelki pożyczek -->
                 </div>
-            </footer>
+            </div>
+
+            <!-- DOLNY PASEK TERMINALA -->
+            <div class="outer-box terminal-outer">
+                <div class="terminal-flex">
+                    <div class="terminal-input-group">
+                        <span class="term-arrow">></span>
+                        <input type="text" id="terminal-input" placeholder="WPISZ KOD (P-101) LUB SKANUJ...">
+                        <button id="terminal-enter" class="term-enter-btn">ENTER</button>
+                    </div>
+                    <div class="terminal-status-area">
+                        W OBIEGU: <span id="total-w-obiegu">0.00 zł</span>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
-    <!-- === KONTENERY / MODALE (OKIENKA) === -->
+    <!-- === KONTENERY / MODALE === -->
 
-    <!-- 1. MODAL DODAWANIA POŻYCZKI & PARAGON -->
-    <div id="modal-loan" class="modal" style="display:none;">
-        <div class="modal-box">
-            <h3>[ NOWA POŻYCZKA ]</h3>
+    <!-- 1. MODAL DODAWANIA POŻYCZKI -->
+    <div id="modal-loan" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ NOWA POŻYCZKA ]</div>
             <form id="loan-form">
-                <div class="input-group">
-                    <label>Kto bierze (Imię i Nazwisko / Firma):</label>
+                <div class="m-input-group">
+                    <label>KTO BIERZE (KLIENT):</label>
                     <input type="text" id="loan-person" required placeholder="np. Urszula Bugajska">
                 </div>
-                <div class="input-group">
-                    <label>Kwota (zł):</label>
-                    <input type="number" step="0.01" id="loan-amount" required placeholder="100">
+                <div class="m-input-group">
+                    <label>KWOTA (ZŁ):</label>
+                    <input type="number" step="0.01" id="loan-amount" required placeholder="100.00">
                 </div>
-                <div class="input-group">
-                    <label>Odsetki po 14 dniach (%):</label>
-                    <input type="number" step="0.1" id="loan-interest" value="5" placeholder="5">
+                <div class="m-input-group">
+                    <label>ODSETKI PO 14 DNIACH (%):</label>
+                    <input type="number" step="0.1" id="loan-interest" value="5">
                 </div>
-                <div class="auth-buttons">
-                    <button type="submit" class="btn primary">ZAPISZ I GENERUJ PARAGON</button>
-                    <button type="button" class="btn secondary close-modal">ANULUJ</button>
+                <div class="m-btn-group">
+                    <button type="submit" class="retro-btn">ZAPISZ & PARAGON</button>
+                    <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- 2. MODAL PARAGONU Z KODEM QR -->
-    <div id="modal-receipt" class="modal" style="display:none;">
-        <div class="modal-box receipt-box">
-            <h3>*** PARAGON / UMOWA ***</h3>
-            <div id="receipt-content" style="margin: 15px 0; font-size: 0.85rem; line-height: 1.4;">
-                <!-- Dane paragonu -->
+    <div id="modal-receipt" class="modal-backdrop" style="display:none;">
+        <div class="modal-window receipt-style">
+            <div class="receipt-header">*** PARAGON RETRO POS ***</div>
+            <div id="receipt-content" class="receipt-body"></div>
+            <div id="qrcode" class="receipt-qr-wrap"></div>
+            <div class="m-btn-group">
+                <button type="button" class="retro-btn close-modal" style="width:100%;">ZAMKNIJ PARAGON</button>
             </div>
-            <div id="qrcode" style="display: flex; justify-content: center; margin: 15px 0; background: white; padding: 10px;"></div>
-            <button type="button" class="btn primary close-modal" style="width:100%;">ZAMKNIJ PARAGON</button>
         </div>
     </div>
 
     <!-- 3. MODAL KASETKI -->
-    <div id="modal-kasetka" class="modal" style="display:none;">
-        <div class="modal-box">
-            <h3>[ ZARZĄDZANIE KASETKĄ ]</h3>
-            <p style="font-size:0.8rem; margin-bottom:15px;">Aktualny stan gotówki w kasetce:</p>
-            <div class="input-group">
+    <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ STAN KASETKI ]</div>
+            <div class="m-input-group">
+                <label>KWOTA W KASETCE (ZŁ):</label>
                 <input type="number" step="0.01" id="kasetka-input-value">
             </div>
-            <p style="font-size:0.75rem; color:#88c0d0; margin-bottom:10px;">Szybkie dodaj do kasetki:</p>
-            <div class="quick-cash-grid">
-                <button type="button" class="btn-cash" data-val="10">+10 zł</button>
-                <button type="button" class="btn-cash" data-val="20">+20 zł</button>
-                <button type="button" class="btn-cash" data-val="50">+50 zł</button>
-                <button type="button" class="btn-cash" data-val="100">+100 zł</button>
-                <button type="button" class="btn-cash" data-val="200">+200 zł</button>
+            <div class="m-label-sub">SZYBKIE DODAWANIE GOTÓWKI:</div>
+            <div class="quick-cash-flex">
+                <button type="button" class="quick-cash-btn" data-val="10">+10 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="20">+20 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="50">+50 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="100">+100 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="200">+200 zł</button>
             </div>
-            <div class="auth-buttons" style="margin-top:20px;">
-                <button type="button" id="save-kasetka" class="btn primary">ZAPISZ</button>
-                <button type="button" class="btn secondary close-modal">ZAMKNIJ</button>
+            <div class="m-btn-group" style="margin-top:16px;">
+                <button type="button" id="save-kasetka" class="retro-btn">ZATWIERDŹ</button>
+                <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
             </div>
         </div>
     </div>
 
     <!-- 4. MODAL SKANERA QR -->
-    <div id="modal-scanner" class="modal" style="display:none;">
-        <div class="modal-box">
-            <h3>[ SKANER KAMERY QR ]</h3>
+    <div id="modal-scanner" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ KAMERA SKANER QR ]</div>
             <div id="reader" style="width: 100%; max-width: 320px; margin: 10px auto;"></div>
-            <button type="button" class="btn secondary close-modal" id="stop-scanner-btn" style="width:100%; margin-top:10px;">ZAMKNIJ SKANER</button>
+            <button type="button" class="retro-btn secondary close-modal" style="width:100%; margin-top: 10px;">ZAMKNIJ KAMERĘ</button>
         </div>
     </div>
 
-    <!-- 5. MODAL RAPORTU DOBOWEGO -->
-    <div id="modal-report" class="modal" style="display:none;">
-        <div class="modal-box a4-report-box">
-            <h3>[ RAPORT DOBOWY - A4 ]</h3>
-            <div id="report-content" class="report-paper">
-                <!-- Wypełniane dynamicznie -->
-            </div>
-            <div class="auth-buttons" style="margin-top:15px;">
-                <button type="button" onclick="window.print()" class="btn primary">DRUKUJ RAPORT</button>
-                <button type="button" class="btn secondary close-modal">ZAMKNIJ</button>
+    <!-- 5. MODAL RAPORTU DOBOWEGO A4 -->
+    <div id="modal-report" class="modal-backdrop" style="display:none;">
+        <div class="modal-window report-window">
+            <div class="modal-header">[ RAPORT DOBOWY A4 ]</div>
+            <div id="report-content" class="report-paper"></div>
+            <div class="m-btn-group" style="margin-top:14px;">
+                <button type="button" onclick="window.print()" class="retro-btn">DRUKUJ A4</button>
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
