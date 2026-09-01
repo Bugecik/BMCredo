@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const receiptContent = document.getElementById('receipt-content');
     const qrcodeDiv = document.getElementById('qrcode');
+    const btnPrintReceipt = document.getElementById('btn-print-receipt');
     const reportContent = document.getElementById('report-content');
     const btnPrintReport = document.getElementById('btn-print-report');
     const printFrame = document.getElementById('print-frame');
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastMove: 'Brak'
     };
     let unsubscribeFirestore = null;
+    let currentReceiptHtml = '';
 
     let loggedUser = sessionStorage.getItem('bmcredo_logged_user');
     let activeDatabaseId = sessionStorage.getItem('bmcredo_db_id');
@@ -672,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalKasetkaOnl.style.display = 'none';
     });
 
-    // 3. + POŻYCZKA (Z WYBOREM ŹRÓDŁA ŚRODKÓW)
+    // 3. + POŻYCZKA
     tileAddLoan.addEventListener('click', () => {
         const cfg = currentData.settings || {};
         loanPerson.value = '';
@@ -758,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showReceipt(newLoan);
     });
 
-    // 4. WPŁATA DŁUŻNIKA (DO WYBRANEJ KASETKI)
+    // 4. WPŁATA DŁUŻNIKA
     window.openPaymentModal = function(index) {
         const loan = currentData.loans[index];
         paymentLoanIndex.value = index;
@@ -854,39 +856,115 @@ document.addEventListener('DOMContentLoaded', () => {
         modalProlong.style.display = 'none';
     });
 
-    // 6. GENEROWANIE PARAGONU
+    // 6. GENEROWANIE PARAGONU POD DRUKARKĘ TERMICZNĄ 57 MM
     function showReceipt(loan) {
         const details = calculateLoanDetails(loan);
         const defaultDays = (currentData.settings && currentData.settings.defaultDays) ? parseInt(currentData.settings.defaultDays) : 14;
         const zwrotDate = new Date(loan.date || new Date());
         zwrotDate.setDate(zwrotDate.getDate() + defaultDays);
+        const cfg = currentData.settings || {};
 
-        receiptContent.innerHTML = `
-            <div><b>KOD UMOWY:</b> ${loan.code}</div>
-            <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
+        const company = cfg.companyName || 'KASA POŻYCZKOWA RETRO POS';
+
+        const rawBodyHtml = `
+            <div><b>KOD:</b> ${loan.code}</div>
+            <div><b>DATA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
             <div><b>OPERATOR:</b> ${loan.operator || 'Admin'}</div>
-            <div><b>ŹRÓDŁO KASY:</b> ${loan.sourceWallet === 'online' ? 'KASA ONLINE' : 'KASA FIZYCZNA'}</div>
+            <div><b>KASA:</b> ${loan.sourceWallet === 'online' ? 'KASA ONLINE' : 'KASA FIZYCZNA'}</div>
             <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
-            <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
+            <div style="margin: 4px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 4px 0;">
                 <div>KWOTA GŁÓWNA: <b>${details.principal.toFixed(2)} PLN</b></div>
-                <div>WPŁACONO DOTYCHCZAS: <b>${details.paid.toFixed(2)} PLN</b></div>
-                <div>NALICZONE ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
-                <div>POZOSTAŁO DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
-                <div>STAWKA ODSETEK: <b>${loan.interest}%</b></div>
-                <div>TERMIN ZWROTU: <b>${zwrotDate.toLocaleDateString()}</b></div>
+                <div>WPŁACONO: <b>${details.paid.toFixed(2)} PLN</b></div>
+                <div>ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
+                <div>DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
+                <div>STAWKA: <b>${loan.interest}%</b></div>
+                <div>TERMIN: <b>${zwrotDate.toLocaleDateString()}</b></div>
             </div>
             <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
         `;
 
+        receiptContent.innerHTML = rawBodyHtml;
+
         qrcodeDiv.innerHTML = '';
         new QRCode(qrcodeDiv, {
             text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${details.principal}|${loan.interest}`,
-            width: 110,
-            height: 110
+            width: 95,
+            height: 95
         });
+
+        // Generowanie czystego kodu HTML paragonu o szerokości 57mm i dynamicznej długości
+        currentReceiptHtml = `
+            <div style="width: 48mm; margin: 0 auto; padding: 2mm 0; font-family:'Times New Roman', Times, serif; font-size: 11px; line-height: 1.25; color: #000;">
+                <div style="text-align:center; margin-bottom: 4px;">
+                    <h3 style="font-size: 13px; font-weight: bold; margin: 0; text-transform: uppercase;">${company}</h3>
+                    <p style="font-size: 10px; margin: 2px 0 0 0;">DOWÓD ZAWARCIA UMOWY POŻYCZKI</p>
+                </div>
+                <div style="text-align:center; font-weight:bold; margin: 3px 0;">--------------------------------</div>
+                ${rawBodyHtml}
+                <div style="text-align:center; font-weight:bold; margin: 3px 0;">--------------------------------</div>
+                <div style="display:flex; justify-content:center; margin: 6px 0;">
+                    <div id="receipt-qr-target"></div>
+                </div>
+                <div style="text-align:center; font-size: 9.5px; margin-top: 4px;">
+                    <p style="margin:0;">Dziękujemy za skorzystanie z usług.</p>
+                    <p style="margin:2px 0 0 0;">*** DOKUMENT POTWIERDZAJĄCY ***</p>
+                </div>
+                <div style="text-align:center; font-size: 8.5px; color:#333; margin-top: 6px; border-top: 1px dashed #000; padding-top: 4px;">
+                    - - - - - ODETNIJ TUTAJ - - - - -
+                </div>
+            </div>
+        `;
 
         modalReceipt.style.display = 'flex';
     }
+
+    // Obsługa drukowania 57 mm przez iframe
+    btnPrintReceipt.addEventListener('click', () => {
+        const frameDoc = printFrame.contentWindow.document;
+        frameDoc.open();
+        frameDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Paragon</title>
+                <style>
+                    @page {
+                        size: 57mm auto;
+                        margin: 0mm;
+                    }
+                    html, body {
+                        margin: 0;
+                        padding: 0;
+                        width: 57mm;
+                        background: #fff;
+                        font-family: "Times New Roman", Times, serif;
+                    }
+                </style>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+            </head>
+            <body>
+                ${currentReceiptHtml}
+                <script>
+                    const qrImg = window.parent.document.querySelector("#qrcode img");
+                    if (qrImg) {
+                        const target = document.getElementById("receipt-qr-target");
+                        const newImg = document.createElement("img");
+                        newImg.src = qrImg.src;
+                        newImg.style.width = "95px";
+                        newImg.style.height = "95px";
+                        target.appendChild(newImg);
+                    }
+                <\/script>
+            </body>
+            </html>
+        `);
+        frameDoc.close();
+
+        setTimeout(() => {
+            printFrame.contentWindow.focus();
+            printFrame.contentWindow.print();
+        }, 300);
+    });
 
     window.reprintReceipt = function(index) {
         const loan = currentData.loans[index];
@@ -1323,7 +1401,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
 
-        // Spis banknotów do raportu
         let banknotesReport = '';
         if ((data.cashInventory?.banknotes || []).length > 0) {
             banknotesReport = (data.cashInventory.banknotes).map(bn => `${bn.value} zł (SN: ${bn.serial})`).join(', ');

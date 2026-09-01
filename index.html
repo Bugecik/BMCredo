@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -55,13 +55,13 @@
                     <div class="tile-desc">+ POŻYCZKA</div>
                 </div>
 
-                <!-- 2. KASETKA FIZYCZNA (SZUFLADA) -->
+                <!-- 2. KASETKA FIZYCZNA -->
                 <div class="tile tile-sand" id="tile-kasetka-fiz">
                     <div class="tile-val" id="total-kasetka-fiz">0.00 zł</div>
                     <div class="tile-desc">KASA FIZYCZNA</div>
                 </div>
 
-                <!-- 3. KASETKA ONLINE (KONTO / BLIK) -->
+                <!-- 3. KASETKA ONLINE -->
                 <div class="tile tile-sand" id="tile-kasetka-onl">
                     <div class="tile-val" id="total-kasetka-onl">1000 zł</div>
                     <div class="tile-desc">KASA ONLINE</div>
@@ -170,7 +170,7 @@
 
     <!-- === KONTENERY / MODALE === -->
 
-    <!-- 1. MODAL DODAWANIA POŻYCZKI (Z WYBOREM ŹRÓDŁA KASETKI) -->
+    <!-- 1. MODAL DODAWANIA POŻYCZKI -->
     <div id="modal-loan" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ NOWA POŻYCZKA ]</div>
@@ -203,7 +203,7 @@
         </div>
     </div>
 
-    <!-- 2. MODAL KASETKI FIZYCZNEJ (BANKNOTY Z NR SERYJNYM + MONETY Z ROKIEM) -->
+    <!-- 2. MODAL KASETKI FIZYCZNEJ -->
     <div id="modal-kasetka-fiz" class="modal-backdrop" style="display:none;">
         <div class="modal-window kasetka-fiz-window">
             <div class="modal-header">[ SPIS KASETKI FIZYCZNEJ ]</div>
@@ -288,7 +288,7 @@
         </div>
     </div>
 
-    <!-- 4. MODAL REJESTROWANIA WPŁATY (Z WYBOREM KASETKI) -->
+    <!-- 4. MODAL REJESTROWANIA WPŁATY -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -314,7 +314,7 @@
         </div>
     </div>
 
-    <!-- 5. MODAL PROLONGATY (+14 DNI) -->
+    <!-- 5. MODAL PROLONGATY -->
     <div id="modal-prolong" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ PROLONGATA TERMINU ]</div>
@@ -487,7 +487,7 @@
         </div>
     </div>
 
-    <!-- 10. MODAL PARAGONU (TIMES NEW ROMAN) -->
+    <!-- 10. MODAL PODGLĄDU PARAGONU (57 MM ROLKA) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
         <div class="modal-window receipt-wrapper">
             <div id="receipt-printable" class="receipt-thermal-paper">
@@ -507,7 +507,7 @@
             </div>
 
             <div class="m-btn-group no-print" style="margin-top: 12px;">
-                <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ PARAGON</button>
+                <button type="button" id="btn-print-receipt" class="retro-btn" style="background:#426b68;">DRUKUJ PARAGON (57 MM)</button>
                 <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
@@ -534,9 +534,9 @@
         </div>
     </div>
 
-    <!-- UKRYTY IFRAME DO CZYSTEGO DRUKU A4 -->
-    <iframe id="print-frame" style="display:none;"></iframe>
+    <!-- UKRYTY IFRAME DO DRUKU BEZ ZNIEKSZTAŁCEŃ (PARAGONY 57MM & RAPORTY A4) -->
+    <iframe id="print-frame" style="position: absolute; width: 0; height: 0; border: 0; visibility: hidden;"></iframe>
 
-    <script src="app.js?v=11"></script>
+    <script src="app.js?v=12"></script>
 </body>
 </html>
