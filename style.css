@@ -51,7 +51,7 @@ body {
     min-width: 310px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     height: 100%;
 }
 
@@ -72,12 +72,12 @@ body {
 
 .header-box {
     text-align: center;
-    padding: 8px 6px;
+    padding: 6px;
 }
 
 .box-label-title {
     color: var(--accent-orange);
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     letter-spacing: 1px;
 }
 
@@ -89,14 +89,14 @@ body {
 
 .tile {
     border: 3px solid var(--border-dark);
-    height: 72px;
+    height: 64px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     text-align: center;
-    padding: 4px;
+    padding: 3px;
     box-shadow: inset 2px 2px 0px rgba(255,255,255,0.1), inset -2px -2px 0px rgba(0,0,0,0.3);
 }
 
@@ -105,19 +105,26 @@ body {
     transform: translate(1px, 1px);
 }
 
+.tile-full-width {
+    grid-column: span 2;
+    height: 48px;
+    flex-direction: row;
+    gap: 8px;
+}
+
 .tile-olive  { background-color: var(--tile-olive); }
 .tile-sand   { background-color: var(--tile-sand); }
 .tile-teal   { background-color: var(--tile-teal); }
 .tile-purple { background-color: var(--tile-purple); }
 
 .tile-val {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     color: var(--text-white);
     margin-bottom: 2px;
 }
 
 .tile-desc {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     color: var(--text-sand);
     letter-spacing: 0.5px;
 }
@@ -130,14 +137,14 @@ body {
 /* ZYSK */
 .profit-box {
     background-color: var(--border-inner);
-    padding: 6px 8px;
+    padding: 5px 8px;
     text-align: center;
 }
 
 .profit-val {
     color: var(--accent-green);
-    font-size: 0.95rem;
-    margin: 2px 0 4px 0;
+    font-size: 0.9rem;
+    margin: 2px 0 3px 0;
 }
 
 .profit-transfer-btn {
@@ -145,7 +152,7 @@ body {
     border: 1px solid var(--accent-green);
     color: var(--accent-green);
     font-size: 0.55rem;
-    padding: 3px 6px;
+    padding: 2px 6px;
     cursor: pointer;
     width: 100%;
 }
@@ -153,24 +160,24 @@ body {
 .last-move-box {
     margin-top: auto;
     background-color: var(--border-inner);
-    padding: 8px;
+    padding: 6px;
 }
 
 .sub-label {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     color: var(--text-sand);
     margin-bottom: 2px;
 }
 
 .last-move-val {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--accent-green);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     word-break: break-all;
 }
 
 .user-subline {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     color: var(--text-dim);
     border-top: 1px dashed var(--border-dark);
     padding-top: 4px;
@@ -184,7 +191,7 @@ body {
     border: none;
     color: var(--accent-orange);
     cursor: pointer;
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     margin-right: 4px;
 }
 
@@ -193,7 +200,7 @@ body {
     border: none;
     color: var(--accent-red);
     cursor: pointer;
-    font-size: 0.6rem;
+    font-size: 0.58rem;
 }
 
 .tabs-outer {
@@ -243,11 +250,11 @@ body {
 .retro-loan-card {
     background-color: var(--tile-olive);
     border: 3px solid var(--border-dark);
-    padding: 12px 14px;
-    max-width: 460px;
+    padding: 10px 12px;
+    max-width: 480px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
 }
 
 .card-top-row {
@@ -262,11 +269,20 @@ body {
 }
 
 .rating-badge {
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     padding: 1px 4px;
     border-radius: 2px;
     margin-left: 4px;
     font-weight: bold;
+}
+
+.wallet-badge {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    background: var(--border-inner);
+    color: var(--text-sand);
+    border: 1px solid var(--border-dark);
+    margin-left: 4px;
 }
 
 .rating-a { background: #68ad48; color: #12170f; }
@@ -274,15 +290,15 @@ body {
 .rating-c { background: #c95144; color: #fff; }
 
 .client-code {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--text-sand);
 }
 
 .card-mid-row {
-    font-size: 0.65rem;
+    font-size: 0.63rem;
     color: var(--text-white);
     background: var(--border-inner);
-    padding: 6px;
+    padding: 5px 6px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -300,7 +316,7 @@ body {
 }
 
 .time-ago {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-sand);
 }
 
@@ -314,7 +330,7 @@ body {
     background: none;
     border: 1px solid var(--border-dark);
     padding: 3px 6px;
-    font-size: 0.6rem;
+    font-size: 0.58rem;
     cursor: pointer;
 }
 
@@ -323,7 +339,7 @@ body {
 .action-delete  { color: var(--accent-red); }
 
 .status-tag {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: bold;
 }
 .status-splacone { color: var(--accent-green); }
@@ -399,17 +415,21 @@ body {
 .auth-box, .modal-window {
     background-color: var(--bg-main);
     border: 4px solid var(--border-dark);
-    padding: 18px;
-    width: 90%;
-    max-width: 420px;
+    padding: 16px;
+    width: 92%;
+    max-width: 440px;
     box-shadow: 6px 6px 0px var(--black);
+}
+
+.kasetka-fiz-window {
+    max-width: 540px;
 }
 
 .auth-title, .modal-header {
     color: var(--accent-orange);
     text-align: center;
-    font-size: 1.1rem;
-    margin-bottom: 14px;
+    font-size: 1.05rem;
+    margin-bottom: 12px;
 }
 
 .input-group, .m-input-group {
@@ -418,25 +438,30 @@ body {
 
 .input-group label, .m-input-group label {
     display: block;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-sand);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
-.input-group input, .m-input-group input {
+.input-group input, .m-input-group input, .retro-select {
     width: 100%;
     background-color: var(--border-inner);
     border: 2px solid var(--border-dark);
     color: var(--accent-orange);
-    padding: 8px;
-    font-size: 0.8rem;
+    padding: 7px;
+    font-size: 0.75rem;
     outline: none;
+}
+
+.retro-select option {
+    background-color: var(--bg-main);
+    color: var(--text-white);
 }
 
 .auth-buttons, .m-btn-group {
     display: flex;
     gap: 8px;
-    margin-top: 14px;
+    margin-top: 12px;
 }
 
 .retro-btn {
@@ -444,9 +469,9 @@ body {
     background-color: var(--tile-sand);
     border: 2px solid var(--border-dark);
     color: var(--text-white);
-    padding: 8px;
+    padding: 7px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
 }
 
 .retro-btn.secondary {
@@ -466,14 +491,14 @@ body {
     border: 1px solid var(--accent-red);
     color: #ffb4a2;
     padding: 6px;
-    font-size: 0.65rem;
-    margin-bottom: 10px;
+    font-size: 0.62rem;
+    margin-bottom: 8px;
 }
 
 .m-label-sub {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-dim);
-    margin: 8px 0 4px 0;
+    margin: 6px 0 3px 0;
 }
 
 .quick-cash-flex {
@@ -491,27 +516,73 @@ body {
     cursor: pointer;
 }
 
-/* USTAWIENIA */
-.settings-window { max-width: 460px; }
-.settings-tabs {
+/* STYL ZARZĄDZANIA KASETKĄ FIZYCZNĄ */
+.cash-tabs, .settings-tabs {
     display: flex;
     gap: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
-.set-tab-btn {
+
+.cash-tab-btn, .set-tab-btn {
     flex: 1;
     background-color: var(--tile-olive);
     border: 2px solid var(--border-dark);
     color: var(--text-sand);
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     padding: 6px 2px;
     cursor: pointer;
 }
-.set-tab-btn.active {
+
+.cash-tab-btn.active, .set-tab-btn.active {
     background-color: var(--accent-orange);
     color: var(--black);
     font-weight: bold;
 }
+
+.cash-add-form {
+    border-bottom: 2px dashed #293223;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+.cash-form-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.cash-items-scroll {
+    max-height: 180px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 4px;
+}
+
+.cash-item-row {
+    background: var(--border-inner);
+    border: 1px solid var(--border-dark);
+    padding: 5px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    color: var(--text-white);
+}
+
+.cash-summary-bar {
+    margin-top: 10px;
+    background: var(--border-inner);
+    border: 2px solid var(--border-dark);
+    padding: 8px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--accent-orange);
+}
+
+/* USTAWIENIA */
+.settings-window { max-width: 460px; }
 .operators-list-box {
     max-height: 140px;
     overflow-y: auto;
@@ -535,10 +606,10 @@ body {
 .calc-results-box {
     background: var(--border-inner);
     border: 2px solid var(--border-dark);
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 0.75rem;
-    line-height: 1.6;
+    padding: 8px;
+    margin-top: 8px;
+    font-size: 0.72rem;
+    line-height: 1.5;
 }
 
 /* CELE */
@@ -559,11 +630,11 @@ body {
 .goal-header-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-white);
 }
 .goal-desc-txt {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-dim);
     margin: 2px 0 6px 0;
 }
@@ -585,7 +656,7 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-top: 6px;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--accent-orange);
 }
 

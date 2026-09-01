@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=11">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -55,16 +55,22 @@
                     <div class="tile-desc">+ POŻYCZKA</div>
                 </div>
 
-                <!-- 2. KASETKA -->
-                <div class="tile tile-sand" id="tile-kasetka">
-                    <div class="tile-val" id="total-kasetka">1000 zł</div>
-                    <div class="tile-desc">KASETKA</div>
+                <!-- 2. KASETKA FIZYCZNA (SZUFLADA) -->
+                <div class="tile tile-sand" id="tile-kasetka-fiz">
+                    <div class="tile-val" id="total-kasetka-fiz">0.00 zł</div>
+                    <div class="tile-desc">KASA FIZYCZNA</div>
                 </div>
 
-                <!-- 3. CELE / SKARBONKA -->
+                <!-- 3. KASETKA ONLINE (KONTO / BLIK) -->
+                <div class="tile tile-sand" id="tile-kasetka-onl">
+                    <div class="tile-val" id="total-kasetka-onl">1000 zł</div>
+                    <div class="tile-desc">KASA ONLINE</div>
+                </div>
+
+                <!-- 4. CELE / SKARBONKA -->
                 <div class="tile tile-purple" id="tile-goals">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <circle cx="12" cy="12" r="6"></circle>
                             <circle cx="12" cy="12" r="2"></circle>
@@ -73,10 +79,10 @@
                     <div class="tile-desc">CELE</div>
                 </div>
 
-                <!-- 4. KALKULATOR -->
+                <!-- 5. KALKULATOR -->
                 <div class="tile tile-teal" id="tile-calculator">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="4" y="2" width="16" height="20" rx="2"></rect>
                             <line x1="8" y1="6" x2="16" y2="6"></line>
                             <line x1="16" y1="14" x2="16" y2="18"></line>
@@ -86,10 +92,10 @@
                     <div class="tile-desc">KALKULATOR</div>
                 </div>
 
-                <!-- 5. KAMERA QR -->
+                <!-- 6. KAMERA QR -->
                 <div class="tile tile-teal" id="tile-scanner">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
@@ -97,10 +103,10 @@
                     <div class="tile-desc">KAMERA QR</div>
                 </div>
 
-                <!-- 6. RAPORT DOBOWY -->
-                <div class="tile tile-sand" id="tile-report">
+                <!-- 7. RAPORT DOBOWY -->
+                <div class="tile tile-sand tile-full-width" id="tile-report">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -164,71 +170,7 @@
 
     <!-- === KONTENERY / MODALE === -->
 
-    <!-- 1. MODAL USTAWIENIA & SUB-KONTA KASJERÓW -->
-    <div id="modal-settings" class="modal-backdrop" style="display:none;">
-        <div class="modal-window settings-window">
-            <div class="modal-header">[ USTAWIENIA SYSTEMU & OPERATORZY ]</div>
-
-            <div class="settings-tabs">
-                <button type="button" class="set-tab-btn active" data-stab="tab-operators">OPERATORZY KASY</button>
-                <button type="button" class="set-tab-btn" data-stab="tab-general">KONFIGURACJA POS</button>
-            </div>
-
-            <!-- ZAKŁADKA 1: KASJERZY / SUB-KONTA -->
-            <div id="tab-operators" class="set-tab-content">
-                <div id="admin-operators-section">
-                    <form id="operator-create-form" style="border-bottom: 2px dashed #293223; padding-bottom: 10px; margin-bottom: 10px;">
-                        <div class="m-label-sub" style="color:var(--accent-orange);">+ UTWÓRZ KONTO KASJERA (PRZYPISANE DO TEJ KASY):</div>
-                        <div class="m-input-group">
-                            <label>LOGIN KASJERA:</label>
-                            <input type="text" id="op-username-input" required placeholder="np. kasjer1">
-                        </div>
-                        <div class="m-input-group">
-                            <label>HASŁO KASJERA:</label>
-                            <input type="password" id="op-password-input" required placeholder="••••">
-                        </div>
-                        <button type="submit" class="retro-btn" style="width:100%;">DODAJ OPERATORA</button>
-                    </form>
-
-                    <div class="m-label-sub" style="color:var(--text-white);">LISTA PRZYPISANYCH OPERATORÓW:</div>
-                    <div id="operators-list-container" class="operators-list-box"></div>
-                </div>
-                <div id="non-admin-msg" style="display:none; font-size:0.75rem; color:var(--text-dim); text-align:center; padding:15px;">
-                    Zarządzanie operatorami jest dostępne wyłącznie dla Głównego Administratora bazy.
-                </div>
-            </div>
-
-            <!-- ZAKŁADKA 2: OGÓLNE USTAWIENIA -->
-            <div id="tab-general" class="set-tab-content" style="display:none;">
-                <form id="general-settings-form">
-                    <div class="m-input-group">
-                        <label>NAZWA KASY / FIRMY (NA WYDRUKACH):</label>
-                        <input type="text" id="cfg-company-name" placeholder="KASA POŻYCZKOWA RETRO POS">
-                    </div>
-                    <div class="m-input-group">
-                        <label>DOMYŚLNA STAWKA ODSETEK (%):</label>
-                        <input type="number" step="0.5" id="cfg-default-interest" placeholder="10">
-                    </div>
-                    <div class="m-input-group">
-                        <label>DOMYŚLNY OKRES POŻYCZKI (DNI):</label>
-                        <input type="number" step="1" id="cfg-default-days" placeholder="14">
-                    </div>
-                    <button type="submit" class="retro-btn" style="width:100%; margin-top:8px;">ZAPISZ KONFIGURACJĘ</button>
-                </form>
-
-                <div style="border-top: 2px dashed #293223; margin-top: 14px; padding-top: 10px;">
-                    <div class="m-label-sub" style="color:var(--accent-green);">KOPIA ZAPASOWA DANYCH (BACKUP):</div>
-                    <button type="button" id="btn-export-backup" class="retro-btn secondary" style="width:100%;">POBIERZ BACKUP BAZY (JSON)</button>
-                </div>
-            </div>
-
-            <div class="m-btn-group" style="margin-top: 14px;">
-                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. MODAL DODAWANIA POŻYCZKI -->
+    <!-- 1. MODAL DODAWANIA POŻYCZKI (Z WYBOREM ŹRÓDŁA KASETKI) -->
     <div id="modal-loan" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ NOWA POŻYCZKA ]</div>
@@ -243,6 +185,13 @@
                     <input type="number" step="0.01" id="loan-amount" required placeholder="100.00">
                 </div>
                 <div class="m-input-group">
+                    <label>ŹRÓDŁO WYPŁATY (SKĄD BIERZESZ KASĘ):</label>
+                    <select id="loan-source-wallet" class="retro-select">
+                        <option value="fizyczna">KASA FIZYCZNA (SZUFLADA)</option>
+                        <option value="online">KASA ONLINE (KONTO / BLIK)</option>
+                    </select>
+                </div>
+                <div class="m-input-group">
                     <label>ODSETKI PO TERMINIE (%):</label>
                     <input type="number" step="0.1" id="loan-interest" value="10">
                 </div>
@@ -254,55 +203,92 @@
         </div>
     </div>
 
-    <!-- 3. MODAL KALKULATORA FINANSOWEGO -->
-    <div id="modal-calculator" class="modal-backdrop" style="display:none;">
-        <div class="modal-window calc-window">
-            <div class="modal-header">[ KALKULATOR ODSETEK POS ]</div>
-            <div class="m-input-group">
-                <label>KWOTA KAPITAŁU (ZŁ):</label>
-                <input type="number" step="10" id="calc-principal" placeholder="500" value="500">
-            </div>
-            <div class="m-input-group">
-                <label>STAWKA ODSETEK (%):</label>
-                <input type="number" step="1" id="calc-rate" placeholder="10" value="10">
-            </div>
-            <div class="m-input-group">
-                <label>DNI PRZETERMINOWANIA (POZA TERMIN):</label>
-                <input type="number" step="1" id="calc-days" placeholder="7" value="7">
+    <!-- 2. MODAL KASETKI FIZYCZNEJ (BANKNOTY Z NR SERYJNYM + MONETY Z ROKIEM) -->
+    <div id="modal-kasetka-fiz" class="modal-backdrop" style="display:none;">
+        <div class="modal-window kasetka-fiz-window">
+            <div class="modal-header">[ SPIS KASETKI FIZYCZNEJ ]</div>
+            
+            <div class="cash-tabs">
+                <button type="button" class="cash-tab-btn active" data-ctab="ctab-banknoty">BANKNOTY (NUMER SERYJNY)</button>
+                <button type="button" class="cash-tab-btn" data-ctab="ctab-monety">MONETY (ROK WYBICIA)</button>
             </div>
 
-            <div class="calc-results-box">
-                <div>NALICZONE ODSETKI: <b id="calc-res-interest" style="color:var(--accent-green);">+50.00 zł</b></div>
-                <div>ŁĄCZNIE DO ZWROTU: <b id="calc-res-total" style="color:var(--accent-orange);">550.00 zł</b></div>
+            <!-- SEKCJA 1: BANKNOTY -->
+            <div id="ctab-banknoty" class="cash-tab-content">
+                <form id="add-banknote-form" class="cash-add-form">
+                    <div class="cash-form-row">
+                        <select id="bn-val-select" class="retro-select" style="flex:1;">
+                            <option value="10">10 PLN</option>
+                            <option value="20">20 PLN</option>
+                            <option value="50">50 PLN</option>
+                            <option value="100" selected>100 PLN</option>
+                            <option value="200">200 PLN</option>
+                            <option value="500">500 PLN</option>
+                        </select>
+                        <input type="text" id="bn-serial-input" placeholder="NR SERYJNY (np. AA1234567)" required style="flex:2;">
+                        <button type="submit" class="retro-btn" style="flex:1;">+ DODAJ</button>
+                    </div>
+                </form>
+                <div class="m-label-sub">ZAREJESTROWANE BANKNOTY:</div>
+                <div id="banknotes-list" class="cash-items-scroll"></div>
             </div>
 
-            <div class="m-btn-group" style="margin-top: 12px;">
-                <button type="button" id="btn-use-in-loan" class="retro-btn">PRZEŚLIJ DO POŻYCZKI</button>
-                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            <!-- SEKCJA 2: MONETY -->
+            <div id="ctab-monety" class="cash-tab-content" style="display:none;">
+                <form id="add-coin-form" class="cash-add-form">
+                    <div class="cash-form-row">
+                        <select id="coin-val-select" class="retro-select" style="flex:1;">
+                            <option value="5">5 PLN</option>
+                            <option value="2">2 PLN</option>
+                            <option value="1" selected>1 PLN</option>
+                            <option value="0.50">50 GR</option>
+                            <option value="0.20">20 GR</option>
+                            <option value="0.10">10 GR</option>
+                        </select>
+                        <input type="number" id="coin-qty-input" placeholder="ILOŚĆ" value="1" min="1" required style="flex:1;">
+                        <input type="number" id="coin-year-input" placeholder="ROK (np. 2021)" required style="flex:1;">
+                        <button type="submit" class="retro-btn" style="flex:1;">+ DODAJ</button>
+                    </div>
+                </form>
+                <div class="m-label-sub">ZAREJESTROWANE MONETY:</div>
+                <div id="coins-list" class="cash-items-scroll"></div>
+            </div>
+
+            <div class="cash-summary-bar">
+                RAZEM W KASETCE FIZYCZNEJ: <b id="fiz-calc-total">0.00 zł</b>
+            </div>
+
+            <div class="m-btn-group" style="margin-top: 10px;">
+                <button type="button" class="retro-btn secondary close-modal" style="width:100%;">ZAMKNIJ I ZAPISZ</button>
             </div>
         </div>
     </div>
 
-    <!-- 4. MODAL PROLONGATY (+14 DNI) -->
-    <div id="modal-prolong" class="modal-backdrop" style="display:none;">
+    <!-- 3. MODAL KASETKI ONLINE -->
+    <div id="modal-kasetka-onl" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
-            <div class="modal-header">[ PROLONGATA TERMINU ]</div>
-            <div id="prolong-client-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
-            <form id="prolong-form">
-                <input type="hidden" id="prolong-loan-index">
-                <div class="m-input-group">
-                    <label>OPŁATA ZA PRZEDŁUŻENIE (ZYSK DO KASETKI ZŁ):</label>
-                    <input type="number" step="0.01" id="prolong-fee-input" required value="20.00">
-                </div>
-                <div class="m-btn-group">
-                    <button type="submit" class="retro-btn">PRZEDŁUŻ TERMIN</button>
-                    <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
-                </div>
-            </form>
+            <div class="modal-header">[ KASETKA ONLINE (KONTO / BLIK) ]</div>
+            <div class="m-input-group">
+                <label>KWOTA NA RACHUNKU CYFROWYM (ZŁ):</label>
+                <input type="number" step="0.01" id="kasetka-onl-input-value">
+            </div>
+            <div class="m-label-sub">SZYBKA KOREKTA SALDA ONLINE:</div>
+            <div class="quick-cash-flex">
+                <button type="button" class="quick-cash-btn" data-val="10">+10 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="50">+50 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="100">+100 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="200">+200 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="500">+500 zł</button>
+                <button type="button" class="quick-cash-btn" data-val="1000">+1000 zł</button>
+            </div>
+            <div class="m-btn-group" style="margin-top:16px;">
+                <button type="button" id="save-kasetka-onl" class="retro-btn">ZATWIERDŹ</button>
+                <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
+            </div>
         </div>
     </div>
 
-    <!-- 5. MODAL REJESTROWANIA WPŁATY -->
+    <!-- 4. MODAL REJESTROWANIA WPŁATY (Z WYBOREM KASETKI) -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -313,8 +299,41 @@
                     <label>KWOTA WPŁACANA TERAZ (ZŁ):</label>
                     <input type="number" step="0.01" id="payment-amount-input" required placeholder="50.00">
                 </div>
+                <div class="m-input-group">
+                    <label>DOKĄD WPADAJĄ PIENIĄDZE:</label>
+                    <select id="payment-dest-wallet" class="retro-select">
+                        <option value="fizyczna">KASA FIZYCZNA (SZUFLADA)</option>
+                        <option value="online">KASA ONLINE (KONTO / BLIK)</option>
+                    </select>
+                </div>
                 <div class="m-btn-group">
                     <button type="submit" class="retro-btn">ZATWIERDŹ WPŁATĘ</button>
+                    <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. MODAL PROLONGATY (+14 DNI) -->
+    <div id="modal-prolong" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ PROLONGATA TERMINU ]</div>
+            <div id="prolong-client-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
+            <form id="prolong-form">
+                <input type="hidden" id="prolong-loan-index">
+                <div class="m-input-group">
+                    <label>OPŁATA ZA PRZEDŁUŻENIE (ZYSK ZŁ):</label>
+                    <input type="number" step="0.01" id="prolong-fee-input" required value="20.00">
+                </div>
+                <div class="m-input-group">
+                    <label>DOKĄD WPŁACA OPŁATĘ:</label>
+                    <select id="prolong-dest-wallet" class="retro-select">
+                        <option value="fizyczna">KASA FIZYCZNA</option>
+                        <option value="online">KASA ONLINE</option>
+                    </select>
+                </div>
+                <div class="m-btn-group">
+                    <button type="submit" class="retro-btn">PRZEDŁUŻ TERMIN</button>
                     <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
                 </div>
             </form>
@@ -351,26 +370,124 @@
         </div>
     </div>
 
-    <!-- 7. MODAL WPŁATY NA CEL Z KASETKI -->
+    <!-- 7. MODAL WPŁATY NA CEL -->
     <div id="modal-deposit-goal" class="modal-backdrop" style="display:none; z-index:10000;">
         <div class="modal-window">
-            <div class="modal-header">[ WPŁATA Z KASETKI NA CEL ]</div>
+            <div class="modal-header">[ WPŁATA NA CEL ]</div>
             <div id="deposit-goal-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
             <form id="deposit-goal-form">
                 <input type="hidden" id="deposit-goal-index">
                 <div class="m-input-group">
-                    <label>KWOTA DO PRZELANIA Z KASETKI (ZŁ):</label>
+                    <label>SKĄD POBRAĆ ŚRODKI:</label>
+                    <select id="deposit-source-wallet" class="retro-select">
+                        <option value="online">KASA ONLINE</option>
+                        <option value="fizyczna">KASA FIZYCZNA</option>
+                    </select>
+                </div>
+                <div class="m-input-group">
+                    <label>KWOTA DO PRZELANIA (ZŁ):</label>
                     <input type="number" step="0.01" id="deposit-goal-amount" required placeholder="100.00">
                 </div>
                 <div class="m-btn-group">
-                    <button type="submit" class="retro-btn">WPŁAĆ Z KASETKI</button>
+                    <button type="submit" class="retro-btn">WPŁAĆ NA CEL</button>
                     <button type="button" class="retro-btn secondary" id="btn-close-deposit">ANULUJ</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 8. MODAL PARAGONU (TIMES NEW ROMAN) -->
+    <!-- 8. MODAL KALKULATORA FINANSOWEGO -->
+    <div id="modal-calculator" class="modal-backdrop" style="display:none;">
+        <div class="modal-window calc-window">
+            <div class="modal-header">[ KALKULATOR ODSETEK POS ]</div>
+            <div class="m-input-group">
+                <label>KWOTA KAPITAŁU (ZŁ):</label>
+                <input type="number" step="10" id="calc-principal" placeholder="500" value="500">
+            </div>
+            <div class="m-input-group">
+                <label>STAWKA ODSETEK (%):</label>
+                <input type="number" step="1" id="calc-rate" placeholder="10" value="10">
+            </div>
+            <div class="m-input-group">
+                <label>DNI PRZETERMINOWANIA (POZA TERMIN):</label>
+                <input type="number" step="1" id="calc-days" placeholder="7" value="7">
+            </div>
+
+            <div class="calc-results-box">
+                <div>NALICZONE ODSETKI: <b id="calc-res-interest" style="color:var(--accent-green);">+50.00 zł</b></div>
+                <div>ŁĄCZNIE DO ZWROTU: <b id="calc-res-total" style="color:var(--accent-orange);">550.00 zł</b></div>
+            </div>
+
+            <div class="m-btn-group" style="margin-top: 12px;">
+                <button type="button" id="btn-use-in-loan" class="retro-btn">PRZEŚLIJ DO POŻYCZKI</button>
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9. MODAL USTAWIENIA & OPERATORZY -->
+    <div id="modal-settings" class="modal-backdrop" style="display:none;">
+        <div class="modal-window settings-window">
+            <div class="modal-header">[ USTAWIENIA SYSTEMU & OPERATORZY ]</div>
+
+            <div class="settings-tabs">
+                <button type="button" class="set-tab-btn active" data-stab="tab-operators">OPERATORZY KASY</button>
+                <button type="button" class="set-tab-btn" data-stab="tab-general">KONFIGURACJA POS</button>
+            </div>
+
+            <div id="tab-operators" class="set-tab-content">
+                <div id="admin-operators-section">
+                    <form id="operator-create-form" style="border-bottom: 2px dashed #293223; padding-bottom: 10px; margin-bottom: 10px;">
+                        <div class="m-label-sub" style="color:var(--accent-orange);">+ UTWÓRZ KONTO KASJERA (PRZYPISANE DO TEJ KASY):</div>
+                        <div class="m-input-group">
+                            <label>LOGIN KASJERA:</label>
+                            <input type="text" id="op-username-input" required placeholder="np. kasjer1">
+                        </div>
+                        <div class="m-input-group">
+                            <label>HASŁO KASJERA:</label>
+                            <input type="password" id="op-password-input" required placeholder="••••">
+                        </div>
+                        <button type="submit" class="retro-btn" style="width:100%;">DODAJ OPERATORA</button>
+                    </form>
+
+                    <div class="m-label-sub" style="color:var(--text-white);">LISTA PRZYPISANYCH OPERATORÓW:</div>
+                    <div id="operators-list-container" class="operators-list-box"></div>
+                </div>
+                <div id="non-admin-msg" style="display:none; font-size:0.75rem; color:var(--text-dim); text-align:center; padding:15px;">
+                    Zarządzanie operatorami jest dostępne wyłącznie dla Głównego Administratora bazy.
+                </div>
+            </div>
+
+            <div id="tab-general" class="set-tab-content" style="display:none;">
+                <form id="general-settings-form">
+                    <div class="m-input-group">
+                        <label>NAZWA KASY / FIRMY (NA WYDRUKACH):</label>
+                        <input type="text" id="cfg-company-name" placeholder="KASA POŻYCZKOWA RETRO POS">
+                    </div>
+                    <div class="m-input-group">
+                        <label>DOMYŚLNA STAWKA ODSETEK (%):</label>
+                        <input type="number" step="0.5" id="cfg-default-interest" placeholder="10">
+                    </div>
+                    <div class="m-input-group">
+                        <label>DOMYŚLNY OKRES POŻYCZKI (DNI):</label>
+                        <input type="number" step="1" id="cfg-default-days" placeholder="14">
+                    </div>
+                    <button type="submit" class="retro-btn" style="width:100%; margin-top:8px;">ZAPISZ KONFIGURACJĘ</button>
+                </form>
+
+                <div style="border-top: 2px dashed #293223; margin-top: 14px; padding-top: 10px;">
+                    <div class="m-label-sub" style="color:var(--accent-green);">KOPIA ZAPASOWA DANYCH (BACKUP):</div>
+                    <button type="button" id="btn-export-backup" class="retro-btn secondary" style="width:100%;">POBIERZ BACKUP BAZY (JSON)</button>
+                </div>
+            </div>
+
+            <div class="m-btn-group" style="margin-top: 14px;">
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10. MODAL PARAGONU (TIMES NEW ROMAN) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
         <div class="modal-window receipt-wrapper">
             <div id="receipt-printable" class="receipt-thermal-paper">
@@ -396,30 +513,7 @@
         </div>
     </div>
 
-    <!-- 9. MODAL KASETKI -->
-    <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
-        <div class="modal-window">
-            <div class="modal-header">[ STAN KASETKI ]</div>
-            <div class="m-input-group">
-                <label>KWOTA W KASETCE (ZŁ):</label>
-                <input type="number" step="0.01" id="kasetka-input-value">
-            </div>
-            <div class="m-label-sub">SZYBKIE DODAWANIE GOTÓWKI:</div>
-            <div class="quick-cash-flex">
-                <button type="button" class="quick-cash-btn" data-val="10">+10 zł</button>
-                <button type="button" class="quick-cash-btn" data-val="20">+20 zł</button>
-                <button type="button" class="quick-cash-btn" data-val="50">+50 zł</button>
-                <button type="button" class="quick-cash-btn" data-val="100">+100 zł</button>
-                <button type="button" class="quick-cash-btn" data-val="200">+200 zł</button>
-            </div>
-            <div class="m-btn-group" style="margin-top:16px;">
-                <button type="button" id="save-kasetka" class="retro-btn">ZATWIERDŹ</button>
-                <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 10. MODAL SKANERA QR -->
+    <!-- 11. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -428,7 +522,7 @@
         </div>
     </div>
 
-    <!-- 11. MODAL RAPORTU DOBOWEGO A4 -->
+    <!-- 12. MODAL RAPORTU DOBOWEGO A4 -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
             <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
@@ -443,6 +537,6 @@
     <!-- UKRYTY IFRAME DO CZYSTEGO DRUKU A4 -->
     <iframe id="print-frame" style="display:none;"></iframe>
 
-    <script src="app.js?v=10"></script>
+    <script src="app.js?v=11"></script>
 </body>
 </html>

@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // POS UI
     const loansList = document.getElementById('loans-list');
     const countActive = document.getElementById('count-active');
-    const totalKasetka = document.getElementById('total-kasetka');
+    const totalKasetkaFiz = document.getElementById('total-kasetka-fiz');
+    const totalKasetkaOnl = document.getElementById('total-kasetka-onl');
     const totalWObiegu = document.getElementById('total-w-obiegu');
     const lastMoveText = document.getElementById('last-move-text');
     const totalProfitDisplay = document.getElementById('total-profit-display');
@@ -36,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Kafelki
     const tileAddLoan = document.getElementById('tile-add-loan');
-    const tileKasetka = document.getElementById('tile-kasetka');
+    const tileKasetkaFiz = document.getElementById('tile-kasetka-fiz');
+    const tileKasetkaOnl = document.getElementById('tile-kasetka-onl');
     const tileGoals = document.getElementById('tile-goals');
     const tileCalculator = document.getElementById('tile-calculator');
     const tileScanner = document.getElementById('tile-scanner');
@@ -46,13 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modale
     const modalSettings = document.getElementById('modal-settings');
     const modalLoan = document.getElementById('modal-loan');
+    const modalKasetkaFiz = document.getElementById('modal-kasetka-fiz');
+    const modalKasetkaOnl = document.getElementById('modal-kasetka-onl');
     const modalCalculator = document.getElementById('modal-calculator');
     const modalProlong = document.getElementById('modal-prolong');
     const modalPayment = document.getElementById('modal-payment');
     const modalGoals = document.getElementById('modal-goals');
     const modalDepositGoal = document.getElementById('modal-deposit-goal');
     const modalReceipt = document.getElementById('modal-receipt');
-    const modalKasetka = document.getElementById('modal-kasetka');
     const modalScanner = document.getElementById('modal-scanner');
     const modalReport = document.getElementById('modal-report');
 
@@ -61,7 +64,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const loanPerson = document.getElementById('loan-person');
     const loanAmount = document.getElementById('loan-amount');
     const loanInterest = document.getElementById('loan-interest');
+    const loanSourceWallet = document.getElementById('loan-source-wallet');
     const clientRatingWarning = document.getElementById('client-rating-warning');
+
+    // Kasetka Fizyczna (Spis)
+    const addBanknoteForm = document.getElementById('add-banknote-form');
+    const bnValSelect = document.getElementById('bn-val-select');
+    const bnSerialInput = document.getElementById('bn-serial-input');
+    const banknotesList = document.getElementById('banknotes-list');
+
+    const addCoinForm = document.getElementById('add-coin-form');
+    const coinValSelect = document.getElementById('coin-val-select');
+    const coinQtyInput = document.getElementById('coin-qty-input');
+    const coinYearInput = document.getElementById('coin-year-input');
+    const coinsList = document.getElementById('coins-list');
+    const fizCalcTotal = document.getElementById('fiz-calc-total');
+
+    // Kasetka Online
+    const kasetkaOnlInputValue = document.getElementById('kasetka-onl-input-value');
+    const saveKasetkaOnl = document.getElementById('save-kasetka-onl');
+
+    // Płatności i Prolongaty
+    const paymentForm = document.getElementById('payment-form');
+    const paymentLoanIndex = document.getElementById('payment-loan-index');
+    const paymentAmountInput = document.getElementById('payment-amount-input');
+    const paymentDestWallet = document.getElementById('payment-dest-wallet');
+    const paymentClientInfo = document.getElementById('payment-client-info');
+
+    const prolongForm = document.getElementById('prolong-form');
+    const prolongLoanIndex = document.getElementById('prolong-loan-index');
+    const prolongFeeInput = document.getElementById('prolong-fee-input');
+    const prolongDestWallet = document.getElementById('prolong-dest-wallet');
+    const prolongClientInfo = document.getElementById('prolong-client-info');
 
     // Ustawienia & Kasjerzy
     const operatorCreateForm = document.getElementById('operator-create-form');
@@ -86,16 +120,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const calcResTotal = document.getElementById('calc-res-total');
     const btnUseInLoan = document.getElementById('btn-use-in-loan');
 
-    const prolongForm = document.getElementById('prolong-form');
-    const prolongLoanIndex = document.getElementById('prolong-loan-index');
-    const prolongFeeInput = document.getElementById('prolong-fee-input');
-    const prolongClientInfo = document.getElementById('prolong-client-info');
-
-    const paymentForm = document.getElementById('payment-form');
-    const paymentLoanIndex = document.getElementById('payment-loan-index');
-    const paymentAmountInput = document.getElementById('payment-amount-input');
-    const paymentClientInfo = document.getElementById('payment-client-info');
-
     // Formularze Celów
     const goalCreateForm = document.getElementById('goal-create-form');
     const goalNameInput = document.getElementById('goal-name-input');
@@ -106,12 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const depositGoalForm = document.getElementById('deposit-goal-form');
     const depositGoalIndex = document.getElementById('deposit-goal-index');
     const depositGoalAmount = document.getElementById('deposit-goal-amount');
+    const depositSourceWallet = document.getElementById('deposit-source-wallet');
     const depositGoalInfo = document.getElementById('deposit-goal-info');
     const btnCloseDeposit = document.getElementById('btn-close-deposit');
 
     const receiptContent = document.getElementById('receipt-content');
     const qrcodeDiv = document.getElementById('qrcode');
-    const kasetkaInputValue = document.getElementById('kasetka-input-value');
     const reportContent = document.getElementById('report-content');
     const btnPrintReport = document.getElementById('btn-print-report');
     const printFrame = document.getElementById('print-frame');
@@ -121,7 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentTab = 'splacone';
     let currentData = {
-        kasetka: 1000,
+        kasetkaOnline: 1000,
+        cashInventory: {
+            banknotes: [],
+            coins: []
+        },
         loans: [],
         goals: [],
         operators: [],
@@ -135,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let unsubscribeFirestore = null;
 
-    // Pobranie danych sesji (Użytkownik + ID Głównej Bazy Admina)
     let loggedUser = sessionStorage.getItem('bmcredo_logged_user');
     let activeDatabaseId = sessionStorage.getItem('bmcredo_db_id');
 
@@ -143,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         approveLogin(loggedUser, activeDatabaseId);
     }
 
-    // 1. REJESTRACJA NOWEJ GŁÓWNEJ BAZY ADMINA
+    // 1. REJESTRACJA ADMINA
     btnRegister.addEventListener('click', async () => {
         const u = usernameInput.value.trim().toLowerCase();
         const p = passwordInput.value.trim();
@@ -156,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Utwórz konto admina (jego baza to jego własny login)
             await db.collection('users').doc(u).set({
                 password: p,
                 role: 'admin',
@@ -164,7 +190,17 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             await db.collection('pos_data').doc(u).set({
-                kasetka: 1000,
+                kasetkaOnline: 1000,
+                cashInventory: {
+                    banknotes: [
+                        { value: 100, serial: 'AA1234567' },
+                        { value: 50, serial: 'BB9876543' }
+                    ],
+                    coins: [
+                        { value: 5, qty: 10, year: 2022 },
+                        { value: 2, qty: 5, year: 2020 }
+                    ]
+                },
                 earnedProfit: 0,
                 lastMove: `Inicjalizacja kasy (${u})`,
                 operators: [],
@@ -191,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. LOGOWANIE (OBSŁUGUJE ADMINÓW ORAZ KASJERÓW PRZYPISANYCH DO BAZY)
+    // 2. LOGOWANIE
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const u = usernameInput.value.trim().toLowerCase();
@@ -205,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const userData = userDoc.data();
-            const dbId = userData.adminDatabaseId || u; // Baza admina
+            const dbId = userData.adminDatabaseId || u;
 
             sessionStorage.setItem('bmcredo_logged_user', u);
             sessionStorage.setItem('bmcredo_db_id', dbId);
@@ -235,7 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
         authError.textContent = msg;
     }
 
-    // Synchronizacja w czasie rzeczywistym z bazą docelową
     function listenToUserCloudData(dbId) {
         if (unsubscribeFirestore) unsubscribeFirestore();
 
@@ -246,6 +281,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!currentData.goals) currentData.goals = [];
                     if (!currentData.loans) currentData.loans = [];
                     if (!currentData.operators) currentData.operators = [];
+                    if (!currentData.cashInventory) {
+                        currentData.cashInventory = { banknotes: [], coins: [] };
+                    }
+                    if (currentData.kasetkaOnline === undefined) {
+                        currentData.kasetkaOnline = currentData.kasetka || 1000;
+                    }
                     if (!currentData.settings) {
                         currentData.settings = {
                             companyName: 'KASA POŻYCZKOWA RETRO POS',
@@ -268,6 +309,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             alert('Błąd zapisu do chmury: ' + e.message);
         }
+    }
+
+    // === WYLICZANIE STANU KASETKI FIZYCZNEJ ZE SPISU ===
+    function calculateCashInventoryTotal() {
+        const inv = currentData.cashInventory || { banknotes: [], coins: [] };
+        let bnSum = (inv.banknotes || []).reduce((acc, bn) => acc + parseFloat(bn.value || 0), 0);
+        let coinSum = (inv.coins || []).reduce((acc, c) => acc + (parseFloat(c.value || 0) * parseInt(c.qty || 0)), 0);
+        return {
+            banknotesSum: bnSum,
+            coinsSum: coinSum,
+            total: bnSum + coinSum
+        };
     }
 
     // === SILNIK ODSETEK ===
@@ -338,13 +391,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             modalSettings.style.display = 'none';
             modalLoan.style.display = 'none';
+            modalKasetkaFiz.style.display = 'none';
+            modalKasetkaOnl.style.display = 'none';
             modalCalculator.style.display = 'none';
             modalProlong.style.display = 'none';
             modalPayment.style.display = 'none';
             modalGoals.style.display = 'none';
             modalDepositGoal.style.display = 'none';
             modalReceipt.style.display = 'none';
-            modalKasetka.style.display = 'none';
             modalScanner.style.display = 'none';
             modalReport.style.display = 'none';
             if (html5QrCode) {
@@ -359,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Zakładki w POS
+    // Zakładki POS
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -369,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Zakładki w Ustawieniach
+    // Zakładki Ustawień
     document.querySelectorAll('.set-tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.set-tab-btn').forEach(b => b.classList.remove('active'));
@@ -379,7 +433,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // RYSOWANIE WIDOKU
+    // Zakładki Kasetki Fizycznej (Banknoty / Monety)
+    document.querySelectorAll('.cash-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.cash-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.cash-tab-content').forEach(c => c.style.display = 'none');
+            e.target.classList.add('active');
+            document.getElementById(e.target.getAttribute('data-ctab')).style.display = 'block';
+        });
+    });
+
+    // GŁÓWNY RENDER APLIKACJI
     function renderApp() {
         const data = currentData;
         const loans = data.loans || [];
@@ -390,6 +454,10 @@ document.addEventListener('DOMContentLoaded', () => {
             receiptCompanyTitle.textContent = cfg.companyName.toUpperCase();
         }
 
+        const fizCalc = calculateCashInventoryTotal();
+        totalKasetkaFiz.textContent = `${fizCalc.total.toFixed(2)} zł`;
+        totalKasetkaOnl.textContent = `${parseFloat(data.kasetkaOnline || 0).toFixed(2)} zł`;
+
         let activeLoans = loans.filter(l => !l.splacone);
         let wObieguSum = activeLoans.reduce((acc, l) => {
             const details = calculateLoanDetails(l);
@@ -397,7 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
 
         countActive.textContent = activeLoans.length;
-        totalKasetka.textContent = `${parseFloat(data.kasetka || 0).toFixed(2)} zł`;
         totalWObiegu.textContent = `${wObieguSum.toFixed(2)} zł`;
         lastMoveText.textContent = data.lastMove || 'Brak';
         totalProfitDisplay.textContent = `+${parseFloat(data.earnedProfit || 0).toFixed(2)} zł`;
@@ -429,6 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const details = calculateLoanDetails(loan);
             const rating = getClientRating(loan.fullName || loan.name);
+            const walletLabel = loan.sourceWallet === 'online' ? 'ONLINE' : 'FIZYCZNA';
 
             let statusHtml = '<span class="status-tag status-aktywna">AKTYWNA</span>';
             if (loan.splacone) {
@@ -447,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div>
                         <span class="client-name">${loan.name}</span>
                         <span class="rating-badge ${rating.badgeClass}">${rating.grade}</span>
+                        <span class="wallet-badge">[${walletLabel}]</span>
                     </div>
                     <span class="client-code">[${loan.code}]</span>
                 </div>
@@ -474,165 +543,136 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         renderGoalsList();
-        renderOperatorsList();
+        renderCashInventoryUI();
     }
 
-    // Renderowanie celów
-    function renderGoalsList() {
-        const goals = currentData.goals || [];
-        goalsListContainer.innerHTML = '';
-
-        if (goals.length === 0) {
-            goalsListContainer.innerHTML = '<div style="font-size:0.7rem; color:#7f9372; text-align:center; padding:10px;">Brak celów. Utwórz pierwszy powyżej!</div>';
-            return;
-        }
-
-        goals.forEach((goal, idx) => {
-            const current = parseFloat(goal.current || 0);
-            const target = parseFloat(goal.target || 1);
-            const percent = Math.min(100, Math.round((current / target) * 100));
-
-            const div = document.createElement('div');
-            div.className = 'goal-card';
-            div.innerHTML = `
-                <div class="goal-header-row">
-                    <b>${goal.name}</b>
-                    <span>${current.toFixed(2)} / ${target.toFixed(2)} zł (${percent}%)</span>
-                </div>
-                <div class="goal-desc-txt">${goal.desc || 'Brak opisu'}</div>
-                <div class="goal-progress-bar-bg">
-                    <div class="goal-progress-fill" style="width: ${percent}%;"></div>
-                </div>
-                <div class="goal-footer-row">
-                    <div style="display:flex; gap:6px;">
-                        <button onclick="window.openDepositGoalModal(${idx})" class="retro-btn" style="padding:2px 6px; font-size:0.6rem;">+ WPŁAĆ Z KASETKI</button>
-                        <button onclick="window.withdrawGoalToKasetka(${idx})" class="retro-btn secondary" style="padding:2px 6px; font-size:0.6rem;">- DO KASETKI</button>
-                    </div>
-                    <button onclick="window.deleteGoal(${idx})" style="background:none; border:none; color:#c95144; font-size:0.6rem; cursor:pointer;">[USUŃ CEL]</button>
-                </div>
-            `;
-            goalsListContainer.appendChild(div);
-        });
-    }
-
-    // Renderowanie listy operatorów w ustawieniach
-    function renderOperatorsList() {
-        const operators = currentData.operators || [];
-        operatorsListContainer.innerHTML = '';
-
-        if (operators.length === 0) {
-            operatorsListContainer.innerHTML = '<div style="font-size:0.65rem; color:var(--text-dim); padding:6px;">Brak dodatkowych kasjerów. Tylko Admin ma dostęp.</div>';
-            return;
-        }
-
-        operators.forEach((op, idx) => {
-            const div = document.createElement('div');
-            div.className = 'operator-item';
-            div.innerHTML = `
-                <span>KASJER: <b>${op.username}</b></span>
-                <button onclick="window.deleteOperator(${idx})" style="background:none; border:none; color:var(--accent-red); font-size:0.6rem; cursor:pointer;">[USUŃ KONTO]</button>
-            `;
-            operatorsListContainer.appendChild(div);
-        });
-    }
-
-    // === MODUŁ USTAWIENIA ===
-    btnOpenSettings.addEventListener('click', () => {
-        const userRole = sessionStorage.getItem('bmcredo_user_role');
-        const cfg = currentData.settings || {};
-
-        if (userRole === 'admin') {
-            adminOperatorsSection.style.display = 'block';
-            nonAdminMsg.style.display = 'none';
+    // Renderowanie widoku kasetki fizycznej
+    function renderCashInventoryUI() {
+        const inv = currentData.cashInventory || { banknotes: [], coins: [] };
+        
+        // Banknoty
+        banknotesList.innerHTML = '';
+        if ((inv.banknotes || []).length === 0) {
+            banknotesList.innerHTML = '<div style="font-size:0.62rem; color:var(--text-dim); padding:6px;">Brak zarejestrowanych banknotów.</div>';
         } else {
-            adminOperatorsSection.style.display = 'none';
-            nonAdminMsg.style.display = 'block';
-        }
-
-        cfgCompanyName.value = cfg.companyName || 'KASA POŻYCZKOWA RETRO POS';
-        cfgDefaultInterest.value = cfg.defaultInterest || 10;
-        cfgDefaultDays.value = cfg.defaultDays || 14;
-
-        modalSettings.style.display = 'flex';
-    });
-
-    // Dodanie operatora / sub-konta
-    operatorCreateForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const opUser = opUsernameInput.value.trim().toLowerCase();
-        const opPass = opPasswordInput.value.trim();
-        const dbId = sessionStorage.getItem('bmcredo_db_id');
-
-        if (!opUser || !opPass) return;
-
-        try {
-            const userCheck = await db.collection('users').doc(opUser).get();
-            if (userCheck.exists) {
-                alert('Taki login użytkownika jest już zajęty!');
-                return;
-            }
-
-            // Utwórz konto kasjera wskazujące na bazę obecnego admina
-            await db.collection('users').doc(opUser).set({
-                password: opPass,
-                role: 'kasjer',
-                adminDatabaseId: dbId
+            inv.banknotes.forEach((bn, idx) => {
+                const row = document.createElement('div');
+                row.className = 'cash-item-row';
+                row.innerHTML = `
+                    <span><b>${parseFloat(bn.value).toFixed(2)} PLN</b> | SN: <b style="color:var(--accent-orange);">${bn.serial}</b></span>
+                    <button onclick="window.deleteBanknote(${idx})" style="background:none; border:none; color:var(--accent-red); cursor:pointer; font-size:0.6rem;">[USUŃ]</button>
+                `;
+                banknotesList.appendChild(row);
             });
-
-            const data = currentData;
-            if (!data.operators) data.operators = [];
-            data.operators.push({ username: opUser });
-            data.lastMove = `Dodano kasjera: ${opUser}`;
-            await saveCloudData(data);
-
-            opUsernameInput.value = '';
-            opPasswordInput.value = '';
-            alert(`Pomyślnie utworzono konto kasjera: ${opUser}! Może się logować do Twojej kasy.`);
-        } catch (err) {
-            alert('Błąd tworzenia konta: ' + err.message);
         }
+
+        // Monety
+        coinsList.innerHTML = '';
+        if ((inv.coins || []).length === 0) {
+            coinsList.innerHTML = '<div style="font-size:0.62rem; color:var(--text-dim); padding:6px;">Brak zarejestrowanych monet.</div>';
+        } else {
+            inv.coins.forEach((c, idx) => {
+                const subtotal = parseFloat(c.value) * parseInt(c.qty);
+                const row = document.createElement('div');
+                row.className = 'cash-item-row';
+                row.innerHTML = `
+                    <span><b>${parseFloat(c.value).toFixed(2)} PLN</b> × ${c.qty} szt. = <b>${subtotal.toFixed(2)} zł</b> (ROK: <b style="color:var(--accent-orange);">${c.year}</b>)</span>
+                    <button onclick="window.deleteCoin(${idx})" style="background:none; border:none; color:var(--accent-red); cursor:pointer; font-size:0.6rem;">[USUŃ]</button>
+                `;
+                coinsList.appendChild(row);
+            });
+        }
+
+        const fizCalc = calculateCashInventoryTotal();
+        fizCalcTotal.textContent = `${fizCalc.total.toFixed(2)} zł`;
+    }
+
+    // 1. OBSŁUGA KASETKI FIZYCZNEJ
+    tileKasetkaFiz.addEventListener('click', () => {
+        renderCashInventoryUI();
+        modalKasetkaFiz.style.display = 'flex';
     });
 
-    window.deleteOperator = async function(idx) {
-        const op = currentData.operators[idx];
-        if (!confirm(`Czy na pewno chcesz usunąć konto kasjera: ${op.username}?`)) return;
+    addBanknoteForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const val = parseFloat(bnValSelect.value);
+        const serial = bnSerialInput.value.trim().toUpperCase();
 
-        try {
-            await db.collection('users').doc(op.username).delete();
-            const data = currentData;
-            data.operators.splice(idx, 1);
-            data.lastMove = `Usunięto kasjera: ${op.username}`;
-            await saveCloudData(data);
-        } catch (err) {
-            alert('Błąd usuwania kasjera: ' + err.message);
-        }
+        if (!serial) return;
+
+        const data = currentData;
+        if (!data.cashInventory) data.cashInventory = { banknotes: [], coins: [] };
+        if (!data.cashInventory.banknotes) data.cashInventory.banknotes = [];
+
+        data.cashInventory.banknotes.push({ value: val, serial: serial });
+        data.lastMove = `Kasa Fiz: +${val} zł (SN: ${serial})`;
+        saveCloudData(data);
+
+        bnSerialInput.value = '';
+    });
+
+    window.deleteBanknote = function(idx) {
+        const bn = currentData.cashInventory.banknotes[idx];
+        if (!confirm(`Usunąć banknot ${bn.value} PLN (SN: ${bn.serial})?`)) return;
+
+        const data = currentData;
+        data.cashInventory.banknotes.splice(idx, 1);
+        data.lastMove = `Kasa Fiz: -${bn.value} zł (SN: ${bn.serial})`;
+        saveCloudData(data);
     };
 
-    // Zapis ogólnych ustawień
-    generalSettingsForm.addEventListener('submit', async (e) => {
+    addCoinForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        const val = parseFloat(coinValSelect.value);
+        const qty = parseInt(coinQtyInput.value);
+        const year = parseInt(coinYearInput.value);
+
+        if (isNaN(qty) || qty <= 0 || isNaN(year)) return;
+
         const data = currentData;
-        data.settings = {
-            companyName: cfgCompanyName.value.trim() || 'KASA POŻYCZKOWA RETRO POS',
-            defaultInterest: parseFloat(cfgDefaultInterest.value) || 10,
-            defaultDays: parseInt(cfgDefaultDays.value) || 14
-        };
-        data.lastMove = 'Zaktualizowano konfigurację POS';
-        await saveCloudData(data);
-        alert('Ustawienia kasy zostały pomyślnie zapisane!');
-        modalSettings.style.display = 'none';
+        if (!data.cashInventory) data.cashInventory = { banknotes: [], coins: [] };
+        if (!data.cashInventory.coins) data.cashInventory.coins = [];
+
+        data.cashInventory.coins.push({ value: val, qty: qty, year: year });
+        data.lastMove = `Kasa Fiz: +${(val * qty).toFixed(2)} zł (Monety ${year})`;
+        saveCloudData(data);
+
+        coinQtyInput.value = '1';
+        coinYearInput.value = '';
     });
 
-    // Kopia zapasowa JSON
-    btnExportBackup.addEventListener('click', () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
-        const dlAnchorElem = document.createElement('a');
-        dlAnchorElem.setAttribute("href", dataStr);
-        dlAnchorElem.setAttribute("download", `BMCredo_Backup_${new Date().toISOString().slice(0,10)}.json`);
-        dlAnchorElem.click();
+    window.deleteCoin = function(idx) {
+        const c = currentData.cashInventory.coins[idx];
+        if (!confirm(`Usunąć monety ${c.value} PLN × ${c.qty} szt. (Rok: ${c.year})?`)) return;
+
+        const data = currentData;
+        data.cashInventory.coins.splice(idx, 1);
+        data.lastMove = `Kasa Fiz: usunięto monety (Rok: ${c.year})`;
+        saveCloudData(data);
+    };
+
+    // 2. OBSŁUGA KASETKI ONLINE
+    tileKasetkaOnl.addEventListener('click', () => {
+        kasetkaOnlInputValue.value = parseFloat(currentData.kasetkaOnline || 0).toFixed(2);
+        modalKasetkaOnl.style.display = 'flex';
     });
 
-    // 1. + POŻYCZKA
+    document.querySelectorAll('.quick-cash-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const add = parseFloat(e.target.getAttribute('data-val'));
+            kasetkaOnlInputValue.value = (parseFloat(kasetkaOnlInputValue.value || 0) + add).toFixed(2);
+        });
+    });
+
+    saveKasetkaOnl.addEventListener('click', () => {
+        const data = currentData;
+        data.kasetkaOnline = parseFloat(kasetkaOnlInputValue.value || 0).toFixed(2);
+        data.lastMove = `Kasa Online: ${data.kasetkaOnline} zł`;
+        saveCloudData(data);
+        modalKasetkaOnl.style.display = 'none';
+    });
+
+    // 3. + POŻYCZKA (Z WYBOREM ŹRÓDŁA ŚRODKÓW)
     tileAddLoan.addEventListener('click', () => {
         const cfg = currentData.settings || {};
         loanPerson.value = '';
@@ -670,19 +710,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const amountNum = parseFloat(loanAmount.value);
         const amount = amountNum.toFixed(2);
         const interest = loanInterest.value;
-        const currentKasetka = parseFloat(data.kasetka || 0);
+        const source = loanSourceWallet.value;
 
         if (isNaN(amountNum) || amountNum <= 0) {
             alert('Wpisz poprawną kwotę pożyczki!');
             return;
         }
 
-        if (amountNum > currentKasetka) {
-            const proceed = confirm(`Uwaga: W kasetce jest tylko ${currentKasetka.toFixed(2)} zł, a chcesz pożyczyć ${amount} zł. Czy na pewno wejść na ujemny stan kasy?`);
-            if (!proceed) return;
+        if (source === 'online') {
+            const currentOnl = parseFloat(data.kasetkaOnline || 0);
+            if (amountNum > currentOnl) {
+                const proceed = confirm(`W kasie online jest tylko ${currentOnl.toFixed(2)} zł. Kontynuować?`);
+                if (!proceed) return;
+            }
+            data.kasetkaOnline = (currentOnl - amountNum).toFixed(2);
+        } else {
+            const fizTotal = calculateCashInventoryTotal().total;
+            if (amountNum > fizTotal) {
+                alert(`Uwaga: W kasie fizycznej masz wg spisu ${fizTotal.toFixed(2)} zł. Pamiętaj, aby po wydaniu gotówki zaktualizować spis banknotów/monet w menu "KASA FIZYCZNA".`);
+            }
         }
-
-        data.kasetka = (currentKasetka - amountNum).toFixed(2);
 
         const code = `P-${101 + loans.length}`;
         const shortName = person.length > 13 ? person.substring(0, 11) + '…' : person;
@@ -694,6 +741,7 @@ document.addEventListener('DOMContentLoaded', () => {
             amount,
             paidAmount: '0.00',
             interest,
+            sourceWallet: source,
             odKiedy: '0d TEMU',
             date: new Date().toISOString(),
             splacone: false,
@@ -703,14 +751,341 @@ document.addEventListener('DOMContentLoaded', () => {
 
         loans.push(newLoan);
         data.loans = loans;
-        data.lastMove = `Pożyczka: -${amount} zł dla ${person} (Op: ${user})`;
+        data.lastMove = `Pożyczka [${source.toUpperCase()}]: -${amount} zł dla ${person}`;
         saveCloudData(data);
 
         modalLoan.style.display = 'none';
         showReceipt(newLoan);
     });
 
-    // 2. KALKULATOR
+    // 4. WPŁATA DŁUŻNIKA (DO WYBRANEJ KASETKI)
+    window.openPaymentModal = function(index) {
+        const loan = currentData.loans[index];
+        paymentLoanIndex.value = index;
+        const details = calculateLoanDetails(loan);
+
+        paymentClientInfo.innerHTML = `
+            KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
+            KAPITAŁ: <b>${details.principal.toFixed(2)} zł</b> | ODSETKI: <b>${details.accruedInterest.toFixed(2)} zł</b><br>
+            ŁĄCZNIE DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} zł</b>
+        `;
+        paymentAmountInput.value = details.remainingToPay.toFixed(2);
+        paymentAmountInput.max = details.remainingToPay.toFixed(2);
+        paymentDestWallet.value = loan.sourceWallet || 'fizyczna';
+        modalPayment.style.display = 'flex';
+    };
+
+    paymentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        const index = parseInt(paymentLoanIndex.value);
+        const payVal = parseFloat(paymentAmountInput.value);
+        const dest = paymentDestWallet.value;
+
+        if (isNaN(payVal) || payVal <= 0) {
+            alert('Wpisz poprawną kwotę!');
+            return;
+        }
+
+        const loan = data.loans[index];
+        const details = calculateLoanDetails(loan);
+
+        if (details.accruedInterest > 0) {
+            const profitEarned = Math.min(payVal, details.accruedInterest);
+            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + profitEarned).toFixed(2);
+        }
+
+        const newPaid = details.paid + payVal;
+        loan.paidAmount = newPaid.toFixed(2);
+
+        if (dest === 'online') {
+            data.kasetkaOnline = (parseFloat(data.kasetkaOnline || 0) + payVal).toFixed(2);
+        } else {
+            alert(`Wpłata ${payVal.toFixed(2)} zł przyjęta do kasy FIZYCZNEJ. Pamiętaj, aby dodać przyjęte banknoty (z numerem seryjnym) w menu "KASA FIZYCZNA".`);
+        }
+
+        if (newPaid >= details.totalToRepay) {
+            loan.splacone = true;
+            data.lastMove = `Spłacono: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł [${dest.toUpperCase()}])`;
+        } else {
+            data.lastMove = `Wpłata: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł [${dest.toUpperCase()}])`;
+        }
+
+        saveCloudData(data);
+        modalPayment.style.display = 'none';
+    });
+
+    // 5. PROLONGATA
+    window.openProlongModal = function(index) {
+        const loan = currentData.loans[index];
+        prolongLoanIndex.value = index;
+        prolongClientInfo.innerHTML = `
+            KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
+            Przedłużenie terminu spłaty o kolejny okres.
+        `;
+        prolongFeeInput.value = '20.00';
+        modalProlong.style.display = 'flex';
+    };
+
+    prolongForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        const index = parseInt(prolongLoanIndex.value);
+        const fee = parseFloat(prolongFeeInput.value || 0);
+        const dest = prolongDestWallet.value;
+
+        const loan = data.loans[index];
+        loan.date = new Date().toISOString();
+        loan.prolongations = (loan.prolongations || 0) + 1;
+
+        if (fee > 0) {
+            if (dest === 'online') {
+                data.kasetkaOnline = (parseFloat(data.kasetkaOnline || 0) + fee).toFixed(2);
+            }
+            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + fee).toFixed(2);
+            data.lastMove = `Prolongata: ${loan.name} (+${fee.toFixed(2)} zł zysku [${dest.toUpperCase()}])`;
+        } else {
+            data.lastMove = `Prolongata: ${loan.name}`;
+        }
+
+        saveCloudData(data);
+        modalProlong.style.display = 'none';
+    });
+
+    // 6. GENEROWANIE PARAGONU
+    function showReceipt(loan) {
+        const details = calculateLoanDetails(loan);
+        const defaultDays = (currentData.settings && currentData.settings.defaultDays) ? parseInt(currentData.settings.defaultDays) : 14;
+        const zwrotDate = new Date(loan.date || new Date());
+        zwrotDate.setDate(zwrotDate.getDate() + defaultDays);
+
+        receiptContent.innerHTML = `
+            <div><b>KOD UMOWY:</b> ${loan.code}</div>
+            <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
+            <div><b>OPERATOR:</b> ${loan.operator || 'Admin'}</div>
+            <div><b>ŹRÓDŁO KASY:</b> ${loan.sourceWallet === 'online' ? 'KASA ONLINE' : 'KASA FIZYCZNA'}</div>
+            <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
+            <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
+                <div>KWOTA GŁÓWNA: <b>${details.principal.toFixed(2)} PLN</b></div>
+                <div>WPŁACONO DOTYCHCZAS: <b>${details.paid.toFixed(2)} PLN</b></div>
+                <div>NALICZONE ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
+                <div>POZOSTAŁO DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
+                <div>STAWKA ODSETEK: <b>${loan.interest}%</b></div>
+                <div>TERMIN ZWROTU: <b>${zwrotDate.toLocaleDateString()}</b></div>
+            </div>
+            <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
+        `;
+
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, {
+            text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${details.principal}|${loan.interest}`,
+            width: 110,
+            height: 110
+        });
+
+        modalReceipt.style.display = 'flex';
+    }
+
+    window.reprintReceipt = function(index) {
+        const loan = currentData.loans[index];
+        showReceipt(loan);
+    };
+
+    // 7. CELE & PRZELEWY
+    tileGoals.addEventListener('click', () => {
+        modalGoals.style.display = 'flex';
+        renderGoalsList();
+    });
+
+    function renderGoalsList() {
+        const goals = currentData.goals || [];
+        goalsListContainer.innerHTML = '';
+
+        if (goals.length === 0) {
+            goalsListContainer.innerHTML = '<div style="font-size:0.7rem; color:#7f9372; text-align:center; padding:10px;">Brak celów. Utwórz pierwszy powyżej!</div>';
+            return;
+        }
+
+        goals.forEach((goal, idx) => {
+            const current = parseFloat(goal.current || 0);
+            const target = parseFloat(goal.target || 1);
+            const percent = Math.min(100, Math.round((current / target) * 100));
+
+            const div = document.createElement('div');
+            div.className = 'goal-card';
+            div.innerHTML = `
+                <div class="goal-header-row">
+                    <b>${goal.name}</b>
+                    <span>${current.toFixed(2)} / ${target.toFixed(2)} zł (${percent}%)</span>
+                </div>
+                <div class="goal-desc-txt">${goal.desc || 'Brak opisu'}</div>
+                <div class="goal-progress-bar-bg">
+                    <div class="goal-progress-fill" style="width: ${percent}%;"></div>
+                </div>
+                <div class="goal-footer-row">
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="window.openDepositGoalModal(${idx})" class="retro-btn" style="padding:2px 6px; font-size:0.6rem;">+ WPŁAĆ NA CEL</button>
+                        <button onclick="window.withdrawGoalToOnline(${idx})" class="retro-btn secondary" style="padding:2px 6px; font-size:0.6rem;">- DO KASY ONLINE</button>
+                    </div>
+                    <button onclick="window.deleteGoal(${idx})" style="background:none; border:none; color:#c95144; font-size:0.6rem; cursor:pointer;">[USUŃ CEL]</button>
+                </div>
+            `;
+            goalsListContainer.appendChild(div);
+        });
+    }
+
+    goalCreateForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = currentData;
+        if (!data.goals) data.goals = [];
+
+        const newGoal = {
+            name: goalNameInput.value.trim(),
+            desc: goalDescInput.value.trim(),
+            target: parseFloat(goalTargetInput.value).toFixed(2),
+            current: '0.00'
+        };
+
+        data.goals.push(newGoal);
+        data.lastMove = `Nowy cel: ${newGoal.name}`;
+        saveCloudData(data);
+
+        goalNameInput.value = '';
+        goalDescInput.value = '';
+        goalTargetInput.value = '';
+        renderGoalsList();
+    });
+
+    window.openDepositGoalModal = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        depositGoalIndex.value = goalIdx;
+        const fizTotal = calculateCashInventoryTotal().total;
+        depositGoalInfo.innerHTML = `
+            CEL: <b>${goal.name}</b> (${goal.current} / ${goal.target} zł)<br>
+            Dostępne Online: <b>${parseFloat(currentData.kasetkaOnline || 0).toFixed(2)} zł</b> | Fizyczna: <b>${fizTotal.toFixed(2)} zł</b>
+        `;
+        depositGoalAmount.value = '';
+        modalDepositGoal.style.display = 'flex';
+    };
+
+    depositGoalForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const data = currentData;
+        const gIdx = parseInt(depositGoalIndex.value);
+        const depAmount = parseFloat(depositGoalAmount.value);
+        const source = depositSourceWallet.value;
+
+        if (isNaN(depAmount) || depAmount <= 0) {
+            alert('Wpisz poprawną kwotę!');
+            return;
+        }
+
+        if (source === 'online') {
+            const onl = parseFloat(data.kasetkaOnline || 0);
+            if (depAmount > onl) {
+                alert(`Brak tylu środków w kasie online! Dostępne: ${onl.toFixed(2)} zł`);
+                return;
+            }
+            data.kasetkaOnline = (onl - depAmount).toFixed(2);
+        }
+
+        data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
+        data.lastMove = `Cel [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł (${source.toUpperCase()})`;
+
+        saveCloudData(data);
+        modalDepositGoal.style.display = 'none';
+        renderGoalsList();
+    });
+
+    window.withdrawGoalToOnline = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        const currentSaved = parseFloat(goal.current || 0);
+
+        if (currentSaved <= 0) {
+            alert('W tym celu nie ma środków!');
+            return;
+        }
+
+        const inputVal = prompt(`Ile przelać z celu "${goal.name}" do KASY ONLINE? (Max: ${currentSaved.toFixed(2)} zł)`, currentSaved.toFixed(2));
+        if (inputVal === null) return;
+
+        const withdrawAmount = parseFloat(inputVal);
+        if (isNaN(withdrawAmount) || withdrawAmount <= 0 || withdrawAmount > currentSaved) {
+            alert('Wpisano nieprawidłową kwotę!');
+            return;
+        }
+
+        const data = currentData;
+        data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
+        data.kasetkaOnline = (parseFloat(data.kasetkaOnline || 0) + withdrawAmount).toFixed(2);
+        data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł do Kasy Online`;
+
+        saveCloudData(data);
+        renderGoalsList();
+    };
+
+    window.deleteGoal = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        const savedAmount = parseFloat(goal.current || 0);
+
+        let confirmMsg = `Czy usunąć cel: "${goal.name}"?`;
+        if (savedAmount > 0) {
+            confirmMsg += `\n\nŚrodki (${savedAmount.toFixed(2)} zł) zostaną zwrócone do KASY ONLINE!`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        const data = currentData;
+        if (savedAmount > 0) {
+            data.kasetkaOnline = (parseFloat(data.kasetkaOnline || 0) + savedAmount).toFixed(2);
+        }
+
+        data.goals.splice(goalIdx, 1);
+        data.lastMove = `Usunięto cel: ${goal.name}`;
+        saveCloudData(data);
+        renderGoalsList();
+    };
+
+    // 8. TRANSFER ZYSKU
+    btnTransferProfit.addEventListener('click', () => {
+        const profit = parseFloat(currentData.earnedProfit || 0);
+        if (profit <= 0) {
+            alert('Brak wygenerowanego zysku z odsetek!');
+            return;
+        }
+
+        const goals = currentData.goals || [];
+        if (goals.length === 0) {
+            alert('Najpierw utwórz cel w sekcji "CELE"!');
+            return;
+        }
+
+        const goalName = goals[0].name;
+        if (!confirm(`Czy przelać cały czysty zysk (+${profit.toFixed(2)} zł) do celu: "${goalName}"?`)) return;
+
+        const data = currentData;
+        data.kasetkaOnline = (parseFloat(data.kasetkaOnline || 0) - profit).toFixed(2);
+        data.goals[0].current = (parseFloat(data.goals[0].current || 0) + profit).toFixed(2);
+        data.earnedProfit = 0;
+        data.lastMove = `Przelano zysk (+${profit.toFixed(2)} zł) do [${goalName}]`;
+
+        saveCloudData(data);
+    });
+
+    // 9. USUWANIE POŻYCZKI
+    window.deleteLoan = function(index) {
+        const loan = currentData.loans[index];
+        if (!confirm(`Czy usunąć pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`)) return;
+
+        const data = currentData;
+        const removed = data.loans.splice(index, 1);
+        data.lastMove = `Usunięto pożyczkę: ${removed[0].name}`;
+        saveCloudData(data);
+    };
+
+    // 10. KALKULATOR
     tileCalculator.addEventListener('click', () => {
         updateCalc();
         modalCalculator.style.display = 'flex';
@@ -740,316 +1115,122 @@ document.addEventListener('DOMContentLoaded', () => {
         modalLoan.style.display = 'flex';
     });
 
-    // 3. PROLONGATA
-    window.openProlongModal = function(index) {
-        const loan = currentData.loans[index];
-        prolongLoanIndex.value = index;
-        prolongClientInfo.innerHTML = `
-            KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            Przedłużenie terminu spłaty o kolejny okres.
-        `;
-        prolongFeeInput.value = '20.00';
-        modalProlong.style.display = 'flex';
-    };
+    // 11. USTAWIENIA & OPERATORZY
+    btnOpenSettings.addEventListener('click', () => {
+        const userRole = sessionStorage.getItem('bmcredo_user_role');
+        const cfg = currentData.settings || {};
 
-    prolongForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const user = sessionStorage.getItem('bmcredo_logged_user');
-        const data = currentData;
-        const index = parseInt(prolongLoanIndex.value);
-        const fee = parseFloat(prolongFeeInput.value || 0);
-
-        const loan = data.loans[index];
-        loan.date = new Date().toISOString();
-        loan.prolongations = (loan.prolongations || 0) + 1;
-
-        if (fee > 0) {
-            data.kasetka = (parseFloat(data.kasetka || 0) + fee).toFixed(2);
-            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + fee).toFixed(2);
-            data.lastMove = `Prolongata: ${loan.name} (+${fee.toFixed(2)} zł zysku / Op: ${user})`;
+        if (userRole === 'admin') {
+            adminOperatorsSection.style.display = 'block';
+            nonAdminMsg.style.display = 'none';
         } else {
-            data.lastMove = `Prolongata: ${loan.name} (Op: ${user})`;
+            adminOperatorsSection.style.display = 'none';
+            nonAdminMsg.style.display = 'block';
         }
 
-        saveCloudData(data);
-        modalProlong.style.display = 'none';
+        cfgCompanyName.value = cfg.companyName || 'KASA POŻYCZKOWA RETRO POS';
+        cfgDefaultInterest.value = cfg.defaultInterest || 10;
+        cfgDefaultDays.value = cfg.defaultDays || 14;
+
+        renderOperatorsList();
+        modalSettings.style.display = 'flex';
     });
 
-    // 4. PARAGON
-    function showReceipt(loan) {
-        const details = calculateLoanDetails(loan);
-        const defaultDays = (currentData.settings && currentData.settings.defaultDays) ? parseInt(currentData.settings.defaultDays) : 14;
-        const zwrotDate = new Date(loan.date || new Date());
-        zwrotDate.setDate(zwrotDate.getDate() + defaultDays);
+    function renderOperatorsList() {
+        const operators = currentData.operators || [];
+        operatorsListContainer.innerHTML = '';
 
-        receiptContent.innerHTML = `
-            <div><b>KOD UMOWY:</b> ${loan.code}</div>
-            <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
-            <div><b>OPERATOR:</b> ${loan.operator || 'Admin'}</div>
-            <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
-            <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
-                <div>KWOTA GŁÓWNA: <b>${details.principal.toFixed(2)} PLN</b></div>
-                <div>WPŁACONO DOTYCHCZAS: <b>${details.paid.toFixed(2)} PLN</b></div>
-                <div>NALICZONE ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
-                <div>POZOSTAŁO DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
-                <div>STAWKA ODSETEK: <b>${loan.interest}%</b></div>
-                <div>TERMIN ZWROTU: <b>${zwrotDate.toLocaleDateString()}</b></div>
-            </div>
-            <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
-        `;
+        if (operators.length === 0) {
+            operatorsListContainer.innerHTML = '<div style="font-size:0.65rem; color:var(--text-dim); padding:6px;">Brak dodatkowych kasjerów.</div>';
+            return;
+        }
 
-        qrcodeDiv.innerHTML = '';
-        new QRCode(qrcodeDiv, {
-            text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${details.principal}|${loan.interest}`,
-            width: 110,
-            height: 110
+        operators.forEach((op, idx) => {
+            const div = document.createElement('div');
+            div.className = 'operator-item';
+            div.innerHTML = `
+                <span>KASJER: <b>${op.username}</b></span>
+                <button onclick="window.deleteOperator(${idx})" style="background:none; border:none; color:var(--accent-red); font-size:0.6rem; cursor:pointer;">[USUŃ KONTO]</button>
+            `;
+            operatorsListContainer.appendChild(div);
         });
-
-        modalReceipt.style.display = 'flex';
     }
 
-    window.reprintReceipt = function(index) {
-        const loan = currentData.loans[index];
-        showReceipt(loan);
+    operatorCreateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const opUser = opUsernameInput.value.trim().toLowerCase();
+        const opPass = opPasswordInput.value.trim();
+        const dbId = sessionStorage.getItem('bmcredo_db_id');
+
+        if (!opUser || !opPass) return;
+
+        try {
+            const userCheck = await db.collection('users').doc(opUser).get();
+            if (userCheck.exists) {
+                alert('Taki login użytkownika jest już zajęty!');
+                return;
+            }
+
+            await db.collection('users').doc(opUser).set({
+                password: opPass,
+                role: 'kasjer',
+                adminDatabaseId: dbId
+            });
+
+            const data = currentData;
+            if (!data.operators) data.operators = [];
+            data.operators.push({ username: opUser });
+            data.lastMove = `Dodano kasjera: ${opUser}`;
+            await saveCloudData(data);
+
+            opUsernameInput.value = '';
+            opPasswordInput.value = '';
+            renderOperatorsList();
+            alert(`Pomyślnie utworzono konto kasjera: ${opUser}!`);
+        } catch (err) {
+            alert('Błąd tworzenia konta: ' + err.message);
+        }
+    });
+
+    window.deleteOperator = async function(idx) {
+        const op = currentData.operators[idx];
+        if (!confirm(`Czy na pewno usunąć konto kasjera: ${op.username}?`)) return;
+
+        try {
+            await db.collection('users').doc(op.username).delete();
+            const data = currentData;
+            data.operators.splice(idx, 1);
+            data.lastMove = `Usunięto kasjera: ${op.username}`;
+            await saveCloudData(data);
+            renderOperatorsList();
+        } catch (err) {
+            alert('Błąd usuwania kasjera: ' + err.message);
+        }
     };
 
-    // 5. WPŁATA DŁUŻNIKA
-    window.openPaymentModal = function(index) {
-        const loan = currentData.loans[index];
-        paymentLoanIndex.value = index;
-        const details = calculateLoanDetails(loan);
-
-        paymentClientInfo.innerHTML = `
-            KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            KAPITAŁ: <b>${details.principal.toFixed(2)} zł</b> | ODSETKI: <b>${details.accruedInterest.toFixed(2)} zł</b><br>
-            ŁĄCZNIE DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} zł</b>
-        `;
-        paymentAmountInput.value = details.remainingToPay.toFixed(2);
-        paymentAmountInput.max = details.remainingToPay.toFixed(2);
-        modalPayment.style.display = 'flex';
-    };
-
-    paymentForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const user = sessionStorage.getItem('bmcredo_logged_user');
-        const data = currentData;
-        const index = parseInt(paymentLoanIndex.value);
-        const payVal = parseFloat(paymentAmountInput.value);
-
-        if (isNaN(payVal) || payVal <= 0) {
-            alert('Wpisz poprawną kwotę!');
-            return;
-        }
-
-        const loan = data.loans[index];
-        const details = calculateLoanDetails(loan);
-
-        if (details.accruedInterest > 0) {
-            const profitEarned = Math.min(payVal, details.accruedInterest);
-            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + profitEarned).toFixed(2);
-        }
-
-        const newPaid = details.paid + payVal;
-        loan.paidAmount = newPaid.toFixed(2);
-
-        data.kasetka = (parseFloat(data.kasetka || 0) + payVal).toFixed(2);
-
-        if (newPaid >= details.totalToRepay) {
-            loan.splacone = true;
-            data.lastMove = `Spłacono w całości: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł / Op: ${user})`;
-        } else {
-            data.lastMove = `Wpłata raty: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł / Op: ${user})`;
-        }
-
-        saveCloudData(data);
-        modalPayment.style.display = 'none';
-    });
-
-    // 6. TRANSFER ZYSKU
-    btnTransferProfit.addEventListener('click', () => {
-        const profit = parseFloat(currentData.earnedProfit || 0);
-        if (profit <= 0) {
-            alert('Brak wygenerowanego zysku z odsetek do przelania!');
-            return;
-        }
-
-        const goals = currentData.goals || [];
-        if (goals.length === 0) {
-            alert('Najpierw utwórz cel w sekcji "CELE", aby móc przelać tam zysk!');
-            return;
-        }
-
-        const goalName = goals[0].name;
-        if (!confirm(`Czy przelać cały czysty zysk (+${profit.toFixed(2)} zł) do celu: "${goalName}"?`)) return;
-
-        const data = currentData;
-        data.kasetka = (parseFloat(data.kasetka || 0) - profit).toFixed(2);
-        data.goals[0].current = (parseFloat(data.goals[0].current || 0) + profit).toFixed(2);
-        data.earnedProfit = 0;
-        data.lastMove = `Przelano zysk (+${profit.toFixed(2)} zł) do [${goalName}]`;
-
-        saveCloudData(data);
-    });
-
-    // 7. CELE
-    tileGoals.addEventListener('click', () => {
-        modalGoals.style.display = 'flex';
-        renderGoalsList();
-    });
-
-    goalCreateForm.addEventListener('submit', (e) => {
+    generalSettingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = currentData;
-        if (!data.goals) data.goals = [];
-
-        const newGoal = {
-            name: goalNameInput.value.trim(),
-            desc: goalDescInput.value.trim(),
-            target: parseFloat(goalTargetInput.value).toFixed(2),
-            current: '0.00'
+        data.settings = {
+            companyName: cfgCompanyName.value.trim() || 'KASA POŻYCZKOWA RETRO POS',
+            defaultInterest: parseFloat(cfgDefaultInterest.value) || 10,
+            defaultDays: parseInt(cfgDefaultDays.value) || 14
         };
-
-        data.goals.push(newGoal);
-        data.lastMove = `Nowy cel: ${newGoal.name}`;
-        saveCloudData(data);
-
-        goalNameInput.value = '';
-        goalDescInput.value = '';
-        goalTargetInput.value = '';
-        renderGoalsList();
+        data.lastMove = 'Zaktualizowano konfigurację POS';
+        await saveCloudData(data);
+        alert('Ustawienia zapisane!');
+        modalSettings.style.display = 'none';
     });
 
-    window.openDepositGoalModal = function(goalIdx) {
-        const goal = currentData.goals[goalIdx];
-        depositGoalIndex.value = goalIdx;
-        depositGoalInfo.innerHTML = `
-            CEL: <b>${goal.name}</b><br>
-            Stan celu: <b>${goal.current} / ${goal.target} zł</b><br>
-            Dostępne w kasetce: <b>${parseFloat(currentData.kasetka || 0).toFixed(2)} zł</b>
-        `;
-        depositGoalAmount.value = '';
-        modalDepositGoal.style.display = 'flex';
-    };
-
-    depositGoalForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const data = currentData;
-        const gIdx = parseInt(depositGoalIndex.value);
-        const depAmount = parseFloat(depositGoalAmount.value);
-        const kasetkaStan = parseFloat(data.kasetka || 0);
-
-        if (isNaN(depAmount) || depAmount <= 0) {
-            alert('Wpisz poprawną kwotę wpłaty!');
-            return;
-        }
-
-        if (depAmount > kasetkaStan) {
-            alert(`Brak tylu środków w kasetce! Dostępne: ${kasetkaStan.toFixed(2)} zł`);
-            return;
-        }
-
-        data.kasetka = (kasetkaStan - depAmount).toFixed(2);
-        data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
-        data.lastMove = `Do celu [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
-
-        saveCloudData(data);
-        modalDepositGoal.style.display = 'none';
-        renderGoalsList();
+    btnExportBackup.addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `BMCredo_Backup_${new Date().toISOString().slice(0,10)}.json`);
+        dlAnchorElem.click();
     });
 
-    window.withdrawGoalToKasetka = function(goalIdx) {
-        const goal = currentData.goals[goalIdx];
-        const currentSaved = parseFloat(goal.current || 0);
-
-        if (currentSaved <= 0) {
-            alert('W tym celu nie ma zgromadzonych środków do wypłaty!');
-            return;
-        }
-
-        const inputVal = prompt(`Ile przelać z celu "${goal.name}" z powrotem do kasetki? (Max: ${currentSaved.toFixed(2)} zł)`, currentSaved.toFixed(2));
-        if (inputVal === null) return;
-
-        const withdrawAmount = parseFloat(inputVal);
-        if (isNaN(withdrawAmount) || withdrawAmount <= 0 || withdrawAmount > currentSaved) {
-            alert('Wpisano nieprawidłową kwotę!');
-            return;
-        }
-
-        const data = currentData;
-        data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
-        data.kasetka = (parseFloat(data.kasetka || 0) + withdrawAmount).toFixed(2);
-        data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł`;
-
-        saveCloudData(data);
-        renderGoalsList();
-    };
-
-    window.deleteGoal = function(goalIdx) {
-        const goal = currentData.goals[goalIdx];
-        const savedAmount = parseFloat(goal.current || 0);
-
-        let confirmMsg = `Czy usunąć cel: "${goal.name}"?`;
-        if (savedAmount > 0) {
-            confirmMsg += `\n\nŚrodki (${savedAmount.toFixed(2)} zł) zostaną zwrócone do kasetki!`;
-        }
-
-        if (!confirm(confirmMsg)) return;
-
-        const data = currentData;
-        if (savedAmount > 0) {
-            data.kasetka = (parseFloat(data.kasetka || 0) + savedAmount).toFixed(2);
-        }
-
-        data.goals.splice(goalIdx, 1);
-        data.lastMove = `Usunięto cel: ${goal.name} (Zwrot: +${savedAmount.toFixed(2)} zł)`;
-        saveCloudData(data);
-        renderGoalsList();
-    };
-
-    // 8. USUWANIE POŻYCZKI
-    window.deleteLoan = function(index) {
-        const loan = currentData.loans[index];
-        const totalLoan = parseFloat(loan.amount || 0);
-        const totalPaid = parseFloat(loan.paidAmount || 0);
-        const netAdjustment = totalLoan - totalPaid;
-
-        let confirmMsg = `Czy usunąć pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`;
-        if (netAdjustment !== 0) {
-            confirmMsg += `\n\nKorekta kasetki: Stan gotówki zostanie zaktualizowany o ${netAdjustment > 0 ? '+' : ''}${netAdjustment.toFixed(2)} zł.`;
-        }
-
-        if (!confirm(confirmMsg)) return;
-
-        const data = currentData;
-        data.kasetka = (parseFloat(data.kasetka || 0) + netAdjustment).toFixed(2);
-
-        const removed = data.loans.splice(index, 1);
-        data.lastMove = `Usunięto pożyczkę: ${removed[0].name} (Korekta: +${netAdjustment.toFixed(2)} zł)`;
-        saveCloudData(data);
-    };
-
-    // 9. KASETKA
-    tileKasetka.addEventListener('click', () => {
-        kasetkaInputValue.value = parseFloat(currentData.kasetka || 0).toFixed(2);
-        modalKasetka.style.display = 'flex';
-    });
-
-    document.querySelectorAll('.quick-cash-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const add = parseFloat(e.target.getAttribute('data-val'));
-            kasetkaInputValue.value = (parseFloat(kasetkaInputValue.value || 0) + add).toFixed(2);
-        });
-    });
-
-    document.getElementById('save-kasetka').addEventListener('click', () => {
-        const data = currentData;
-        data.kasetka = parseFloat(kasetkaInputValue.value || 0).toFixed(2);
-        data.lastMove = `Ręczna edycja kasetki: ${data.kasetka} zł`;
-        saveCloudData(data);
-        modalKasetka.style.display = 'none';
-    });
-
-    // 10. SKANER QR
+    // 12. SKANER QR
     let html5QrCode = null;
     tileScanner.addEventListener('click', () => {
         modalScanner.style.display = 'flex';
@@ -1077,8 +1258,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const defaultAmount = 50.00;
-                data.kasetka = (parseFloat(data.kasetka || 0) - defaultAmount).toFixed(2);
-
                 loans.push({
                     code: `P-${101 + loans.length}`,
                     name: `QR: ${decodedText.substring(0, 10)}`,
@@ -1086,6 +1265,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     amount: defaultAmount.toFixed(2),
                     paidAmount: '0.00',
                     interest: (data.settings && data.settings.defaultInterest) || '10',
+                    sourceWallet: 'fizyczna',
                     odKiedy: '0d TEMU',
                     date: new Date().toISOString(),
                     splacone: false,
@@ -1093,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     operator: user
                 });
                 data.loans = loans;
-                data.lastMove = `Skan QR: -${defaultAmount.toFixed(2)} zł (Op: ${user})`;
+                data.lastMove = `Skan QR: ${decodedText.substring(0, 12)}`;
                 saveCloudData(data);
             },
             () => {}
@@ -1103,13 +1283,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 11. RAPORT DOBOWY A4
+    // 13. RAPORT DOBOWY A4 (Z ROZBICIEM NA KASĘ FIZYCZNĄ I ONLINE)
     tileReport.addEventListener('click', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         const loans = data.loans || [];
         const goals = data.goals || [];
         const cfg = data.settings || {};
+        const fizCalc = calculateCashInventoryTotal();
         
         const activeLoans = loans.filter(l => !l.splacone);
         const splaconeLoans = loans.filter(l => l.splacone);
@@ -1125,13 +1306,14 @@ document.addEventListener('DOMContentLoaded', () => {
         loans.forEach((l, i) => {
             const details = calculateLoanDetails(l);
             const status = l.splacone ? 'SPŁACONA' : (details.isOverdue ? 'ODSETKI' : 'AKTYWNA');
+            const wallet = l.sourceWallet === 'online' ? 'ONLINE' : 'FIZ';
 
             tableRows += `
                 <tr>
                     <td style="border:1px solid #000; padding:6px; text-align:center;">${i+1}</td>
                     <td style="border:1px solid #000; padding:6px; text-align:center;"><b>${l.code}</b></td>
                     <td style="border:1px solid #000; padding:6px;">${l.fullName || l.name}</td>
-                    <td style="border:1px solid #000; padding:6px; text-align:center;">${l.operator || 'Admin'}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${wallet}</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">${details.principal.toFixed(2)} zł</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">+${details.accruedInterest.toFixed(2)} zł</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">${details.paid.toFixed(2)} zł</td>
@@ -1141,13 +1323,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
 
-        let goalsSummary = '';
-        if (goals.length > 0) {
-            goalsSummary = '<div style="margin-top:10px; font-size:11pt;"><b>STAN CELÓW OSZCZĘDNOŚCIOWYCH:</b><br>';
-            goals.forEach((g) => {
-                goalsSummary += `• ${g.name}: <b>${parseFloat(g.current).toFixed(2)} zł</b> / ${parseFloat(g.target).toFixed(2)} zł<br>`;
-            });
-            goalsSummary += '</div>';
+        // Spis banknotów do raportu
+        let banknotesReport = '';
+        if ((data.cashInventory?.banknotes || []).length > 0) {
+            banknotesReport = (data.cashInventory.banknotes).map(bn => `${bn.value} zł (SN: ${bn.serial})`).join(', ');
+        } else {
+            banknotesReport = 'Brak zarejestrowanych banknotów';
         }
 
         const reportHtml = `
@@ -1161,8 +1342,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="border:1px solid #000; padding:12px; margin-bottom:15px; background:#fbfbfb;">
                     <table style="width:100%; border:none; font-size:11pt; line-height:1.6;">
                         <tr>
-                            <td style="width:60%;"><b>STAN GOTÓWKI W KASETCE:</b></td>
-                            <td style="text-align:right;"><b>${parseFloat(data.kasetka || 0).toFixed(2)} PLN</b></td>
+                            <td style="width:60%;"><b>STAN KASETKI FIZYCZNEJ (SZUFLADA):</b></td>
+                            <td style="text-align:right;"><b>${fizCalc.total.toFixed(2)} PLN</b></td>
+                        </tr>
+                        <tr>
+                            <td><b>STAN KASETKI ONLINE (KONTO / BLIK):</b></td>
+                            <td style="text-align:right;"><b>${parseFloat(data.kasetkaOnline || 0).toFixed(2)} PLN</b></td>
+                        </tr>
+                        <tr>
+                            <td><b>ŁĄCZNY KAPITAŁ W KASACH (FIZ + ONL):</b></td>
+                            <td style="text-align:right; color:#1a237e;"><b>${(fizCalc.total + parseFloat(data.kasetkaOnline || 0)).toFixed(2)} PLN</b></td>
                         </tr>
                         <tr>
                             <td><b>CZYSTY ZYSK Z ODSETEK / PROLONGAT:</b></td>
@@ -1177,15 +1366,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             <td style="text-align:right;"><b>${totalObieg.toFixed(2)} PLN</b></td>
                         </tr>
                         <tr>
-                            <td><b>ŁĄCZNA SUMA ZAREJESTROWANYCH WPŁAT:</b></td>
-                            <td style="text-align:right;"><b>${totalWplacone.toFixed(2)} PLN</b></td>
-                        </tr>
-                        <tr>
                             <td><b>LICZBA POŻYCZEK (AKTYWNE / SPŁACONE):</b></td>
                             <td style="text-align:right;">${activeLoans.length} szt. / ${splaconeLoans.length} szt.</td>
                         </tr>
                     </table>
-                    ${goalsSummary}
+                    <div style="margin-top:8px; font-size:9.5pt; border-top:1px dashed #666; padding-top:6px;">
+                        <b>INWENTARYZACJA BANKNOTÓW W SZUFLADZIE:</b><br>
+                        ${banknotesReport}
+                    </div>
                 </div>
 
                 <h3 style="font-size:12pt; margin-bottom:6px;">SZCZEGÓŁOWY WYKAZ POZYCJI KASOWYCH:</h3>
@@ -1195,7 +1383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th style="border:1px solid #000; padding:5px;">LP</th>
                             <th style="border:1px solid #000; padding:5px;">KOD</th>
                             <th style="border:1px solid #000; padding:5px;">KLIENT</th>
-                            <th style="border:1px solid #000; padding:5px;">OP</th>
+                            <th style="border:1px solid #000; padding:5px;">KASA</th>
                             <th style="border:1px solid #000; padding:5px;">KAPITAŁ</th>
                             <th style="border:1px solid #000; padding:5px;">ODSETKI</th>
                             <th style="border:1px solid #000; padding:5px;">WPŁACONO</th>
@@ -1208,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </tbody>
                 </table>
 
-                <div style="margin-top:50px; display:flex; justify-content:space-between; font-size:11pt;">
+                <div style="margin-top:45px; display:flex; justify-content:space-between; font-size:11pt;">
                     <div style="text-align:center;">...................................................<br>Podpis Kierownika Zmiany</div>
                     <div style="text-align:center;">...................................................<br>Podpis Operatora Kasy</div>
                 </div>
@@ -1244,7 +1432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // 12. TERMINAL
+    // 14. TERMINAL
     function handleTerminalAction() {
         const val = terminalInput.value.trim();
         if (!val) return;
@@ -1259,7 +1447,6 @@ document.addEventListener('DOMContentLoaded', () => {
             data.lastMove = `Wywołano: ${found.code}`;
         } else {
             const defaultAmt = 100.00;
-            data.kasetka = (parseFloat(data.kasetka || 0) - defaultAmt).toFixed(2);
             loans.push({
                 code: val.toUpperCase(),
                 name: val.toUpperCase(),
@@ -1267,6 +1454,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 amount: defaultAmt.toFixed(2),
                 paidAmount: '0.00',
                 interest: (data.settings && data.settings.defaultInterest) || '10',
+                sourceWallet: 'online',
                 odKiedy: '0d TEMU',
                 date: new Date().toISOString(),
                 splacone: false,
