@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=7">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -49,19 +49,34 @@
             </div>
 
             <div class="tiles-grid">
+                <!-- 1. POŻYCZKA -->
                 <div class="tile tile-olive" id="tile-add-loan">
                     <div class="tile-val" id="count-active">0</div>
                     <div class="tile-desc">+ POŻYCZKA</div>
                 </div>
 
+                <!-- 2. KASETKA -->
                 <div class="tile tile-sand" id="tile-kasetka">
                     <div class="tile-val" id="total-kasetka">1000 zł</div>
                     <div class="tile-desc">KASETKA</div>
                 </div>
 
+                <!-- 3. CELE / SKARBONKA -->
+                <div class="tile tile-purple" id="tile-goals">
+                    <div class="tile-icon-svg">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <circle cx="12" cy="12" r="6"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                        </svg>
+                    </div>
+                    <div class="tile-desc">CELE</div>
+                </div>
+
+                <!-- 4. KAMERA QR -->
                 <div class="tile tile-teal" id="tile-scanner">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
@@ -69,16 +84,17 @@
                     <div class="tile-desc">KAMERA QR</div>
                 </div>
 
-                <div class="tile tile-sand" id="tile-report">
+                <!-- 5. RAPORT DOBOWY -->
+                <div class="tile tile-sand tile-full-width" id="tile-report">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                         </svg>
                     </div>
-                    <div class="tile-desc">RAPORT A4</div>
+                    <div class="tile-desc">RAPORT DOBOWY</div>
                 </div>
             </div>
 
@@ -149,7 +165,7 @@
         </div>
     </div>
 
-    <!-- 2. MODAL REJESTROWANIA WPŁATY / CZĘŚCIOWEJ SPŁATY -->
+    <!-- 2. MODAL REJESTROWANIA WPŁATY -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -168,21 +184,83 @@
         </div>
     </div>
 
-    <!-- 3. MODAL PARAGONU Z KODEM QR (DO DRUKU) -->
+    <!-- 3. MODAL CELE / SKARBONKA -->
+    <div id="modal-goals" class="modal-backdrop" style="display:none;">
+        <div class="modal-window goals-window">
+            <div class="modal-header">[ CELE FINANSOWE / SKARBONKA ]</div>
+            
+            <!-- Tworzenie nowego celu -->
+            <form id="goal-create-form" style="border-bottom: 2px dashed #293223; padding-bottom: 12px; margin-bottom: 12px;">
+                <div class="m-input-group">
+                    <label>NAZWA CELU (NA CO ZBIERASZ):</label>
+                    <input type="text" id="goal-name-input" required placeholder="np. Nowy sprzęt / Samochód">
+                </div>
+                <div class="m-input-group">
+                    <label>OPIS CELU:</label>
+                    <input type="text" id="goal-desc-input" placeholder="np. Odkładanie zysków z odsetek">
+                </div>
+                <div class="m-input-group">
+                    <label>KWOTA DOCELOWA (ZŁ):</label>
+                    <input type="number" step="0.01" id="goal-target-input" required placeholder="2000.00">
+                </div>
+                <button type="submit" class="retro-btn" style="width: 100%;">+ UTWÓRZ NOWY CEL</button>
+            </form>
+
+            <div class="m-label-sub" style="font-size:0.75rem; color:#e9ece4;">TWOJE AKTYWNE CELE:</div>
+            <div id="goals-list-container" class="goals-list-box"></div>
+
+            <div class="m-btn-group" style="margin-top: 14px;">
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MODAL WPŁATY NA CEL Z KASETKI -->
+    <div id="modal-deposit-goal" class="modal-backdrop" style="display:none; z-index:10000;">
+        <div class="modal-window">
+            <div class="modal-header">[ WPŁATA Z KASETKI NA CEL ]</div>
+            <div id="deposit-goal-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
+            <form id="deposit-goal-form">
+                <input type="hidden" id="deposit-goal-index">
+                <div class="m-input-group">
+                    <label>KWOTA DO PRZELANIA Z KASETKI (ZŁ):</label>
+                    <input type="number" step="0.01" id="deposit-goal-amount" required placeholder="100.00">
+                </div>
+                <div class="m-btn-group">
+                    <button type="submit" class="retro-btn">WPŁAĆ Z KASETKI</button>
+                    <button type="button" class="retro-btn secondary" id="btn-close-deposit">ANULUJ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. MODAL PARAGONU DLA DRUKARKI PARAGONÓW (TIMES NEW ROMAN) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
-        <div class="modal-window receipt-style printable-area" id="receipt-printable">
-            <div class="receipt-header">*** BMCREDO POS - DOWÓD POŻYCZKI ***</div>
-            <div id="receipt-content" class="receipt-body"></div>
-            <div id="qrcode" class="receipt-qr-wrap"></div>
-            <div class="receipt-footer-cut">- - - - - ODETNIJ TUTAJ - - - - -</div>
-            <div class="m-btn-group no-print" style="margin-top: 10px;">
+        <div class="modal-window receipt-wrapper">
+            <div id="receipt-printable" class="receipt-thermal-paper">
+                <div class="receipt-header-tnr">
+                    <h3>KASA POŻYCZKOWA RETRO POS</h3>
+                    <p>DOWÓD ZAWARCIA UMOWY POŻYCZKI</p>
+                </div>
+                <div class="receipt-divider-dashes">--------------------------------</div>
+                <div id="receipt-content" class="receipt-body-tnr"></div>
+                <div class="receipt-divider-dashes">--------------------------------</div>
+                <div id="qrcode" class="receipt-qr-center"></div>
+                <div class="receipt-footer-tnr">
+                    <p>Dziękujemy za skorzystanie z usług.</p>
+                    <p>*** DOKUMENT POTWIERDZAJĄCY ***</p>
+                </div>
+                <div class="receipt-cut-line">- - - - - - - - ODETNIJ TUTAJ - - - - - - - -</div>
+            </div>
+
+            <div class="m-btn-group no-print" style="margin-top: 12px;">
                 <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ PARAGON</button>
                 <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
     </div>
 
-    <!-- 4. MODAL KASETKI -->
+    <!-- 6. MODAL KASETKI -->
     <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ STAN KASETKI ]</div>
@@ -205,7 +283,7 @@
         </div>
     </div>
 
-    <!-- 5. MODAL SKANERA QR -->
+    <!-- 7. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -214,11 +292,11 @@
         </div>
     </div>
 
-    <!-- 6. MODAL RAPORTU DOBOWEGO A4 (DO DRUKU) -->
+    <!-- 8. MODAL RAPORTU DOBOWEGO A4 (TIMES NEW ROMAN) -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
             <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
-            <div id="report-content" class="report-paper printable-area"></div>
+            <div id="report-content" class="report-paper-tnr"></div>
             <div class="m-btn-group no-print" style="margin-top:14px;">
                 <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ A4</button>
                 <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
@@ -226,6 +304,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>

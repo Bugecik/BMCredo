@@ -15,6 +15,7 @@
     --tile-olive: #56684c;
     --tile-sand: #876949;
     --tile-teal: #426b68;
+    --tile-purple: #5c4a68;
     --accent-orange: #d89f53;
     --accent-green: #68ad48;
     --accent-red: #c95144;
@@ -46,8 +47,8 @@ body {
 }
 
 .pos-left-panel {
-    width: 290px;
-    min-width: 290px;
+    width: 300px;
+    min-width: 300px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -71,7 +72,7 @@ body {
 
 .header-box {
     text-align: center;
-    padding: 14px 6px;
+    padding: 12px 6px;
 }
 
 .box-label-title {
@@ -83,19 +84,19 @@ body {
 .tiles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
 }
 
 .tile {
     border: 3px solid var(--border-dark);
-    height: 105px;
+    height: 88px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     text-align: center;
-    padding: 6px;
+    padding: 4px;
     box-shadow: inset 2px 2px 0px rgba(255,255,255,0.1), inset -2px -2px 0px rgba(0,0,0,0.3);
 }
 
@@ -104,18 +105,26 @@ body {
     transform: translate(1px, 1px);
 }
 
-.tile-olive { background-color: var(--tile-olive); }
-.tile-sand  { background-color: var(--tile-sand); }
-.tile-teal  { background-color: var(--tile-teal); }
+.tile-full-width {
+    grid-column: span 2;
+    height: 60px;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.tile-olive  { background-color: var(--tile-olive); }
+.tile-sand   { background-color: var(--tile-sand); }
+.tile-teal   { background-color: var(--tile-teal); }
+.tile-purple { background-color: var(--tile-purple); }
 
 .tile-val {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     color: var(--text-white);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .tile-desc {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-sand);
     letter-spacing: 0.5px;
 }
@@ -205,12 +214,12 @@ body {
     gap: 10px;
 }
 
-/* KARTA POŻYCZKI RETRO */
+/* KARTA POŻYCZKI BEZ PRZYCISKU STATUS */
 .retro-loan-card {
     background-color: var(--tile-olive);
     border: 3px solid var(--border-dark);
     padding: 12px 14px;
-    max-width: 420px;
+    max-width: 440px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -236,7 +245,7 @@ body {
     font-size: 0.7rem;
     color: var(--text-white);
     background: var(--border-inner);
-    padding: 4px 6px;
+    padding: 5px 8px;
     display: flex;
     justify-content: space-between;
 }
@@ -261,13 +270,12 @@ body {
 .action-btn {
     background: none;
     border: 1px solid var(--border-dark);
-    padding: 2px 6px;
-    font-size: 0.6rem;
+    padding: 4px 8px;
+    font-size: 0.65rem;
     cursor: pointer;
 }
 
-.action-pay    { color: var(--accent-green); background: var(--border-inner); }
-.action-status { color: var(--accent-orange); }
+.action-pay    { color: var(--accent-green); background: var(--border-inner); font-weight: bold; }
 .action-delete { color: var(--accent-red); }
 
 .status-tag {
@@ -335,7 +343,7 @@ body {
     color: var(--text-white);
 }
 
-/* MODALE */
+/* MODALE OGÓLNE */
 .auth-container, .modal-backdrop {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -349,7 +357,7 @@ body {
     border: 4px solid var(--border-dark);
     padding: 20px;
     width: 90%;
-    max-width: 380px;
+    max-width: 390px;
     box-shadow: 6px 6px 0px var(--black);
 }
 
@@ -430,83 +438,179 @@ body {
     cursor: pointer;
 }
 
-/* STYL PARAGONU (REAL POS RECEIPT) */
-.receipt-style {
-    background-color: #faf8ef;
-    color: #111;
-    border: 3px solid #111;
-    font-family: 'Courier New', Courier, monospace;
-    max-width: 360px;
+/* MODUŁ CELE */
+.goals-window {
+    max-width: 500px;
 }
 
-.receipt-header {
-    color: #111;
+.goals-list-box {
+    max-height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.goal-card {
+    background: var(--border-inner);
+    border: 2px solid var(--border-dark);
+    padding: 8px 10px;
+}
+
+.goal-header-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-white);
+}
+
+.goal-desc-txt {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin: 2px 0 6px 0;
+}
+
+.goal-progress-bar-bg {
+    background: var(--bg-main);
+    border: 1px solid var(--border-dark);
+    height: 12px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.goal-progress-fill {
+    background: var(--accent-green);
+    height: 100%;
+    width: 0%;
+}
+
+.goal-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    font-size: 0.65rem;
+    color: var(--accent-orange);
+}
+
+/* === PARAGON W FORMACIE DRUKARKI PARAGONÓW (TIMES NEW ROMAN) === */
+.receipt-wrapper {
+    max-width: 320px;
+    background: #ffffff;
+    border: 2px solid #000;
+    padding: 12px;
+}
+
+.receipt-thermal-paper {
+    background: #ffffff;
+    color: #000000;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 12px;
+    line-height: 1.35;
+    padding: 6px;
+}
+
+.receipt-thermal-paper * {
+    font-family: "Times New Roman", Times, serif !important;
+}
+
+.receipt-header-tnr {
     text-align: center;
-    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+.receipt-header-tnr h3 {
+    font-size: 14px;
     font-weight: bold;
-    border-bottom: 2px dashed #111;
-    padding-bottom: 8px;
-    margin-bottom: 12px;
+    text-transform: uppercase;
 }
 
-.receipt-body {
-    font-size: 0.8rem;
-    line-height: 1.45;
-    color: #111;
+.receipt-header-tnr p {
+    font-size: 11px;
 }
 
-.receipt-qr-wrap {
+.receipt-divider-dashes {
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin: 4px 0;
+}
+
+.receipt-body-tnr {
+    font-size: 12px;
+    margin: 4px 0;
+}
+
+.receipt-qr-center {
     display: flex;
     justify-content: center;
-    margin: 12px 0;
-    padding: 6px;
-    background: #fff;
-    border: 1px solid #ddd;
+    margin: 8px 0;
 }
 
-.receipt-footer-cut {
-    font-size: 0.65rem;
+.receipt-footer-tnr {
     text-align: center;
-    color: #666;
-    margin-top: 10px;
-    border-top: 1px dashed #999;
-    padding-top: 6px;
+    font-size: 10px;
+    margin-top: 6px;
 }
 
-/* STYL RAPORTU A4 */
+.receipt-cut-line {
+    text-align: center;
+    font-size: 9px;
+    color: #555;
+    margin-top: 8px;
+    border-top: 1px dashed #000;
+    padding-top: 4px;
+}
+
+/* === RAPORT DOBOWY A4 (TIMES NEW ROMAN) === */
 .report-window {
-    max-width: 650px;
+    max-width: 700px;
 }
 
-.report-paper {
+.report-paper-tnr {
     background: #ffffff;
-    color: #111;
-    padding: 20px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.85rem;
+    color: #000000;
+    padding: 24px;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 13px;
     line-height: 1.4;
-    max-height: 400px;
+    max-height: 420px;
     overflow-y: auto;
-    border: 1px solid #111;
+    border: 1px solid #000000;
 }
 
-/* ZASADY DRUKOWANIA (PRINT MEDIA) */
+.report-paper-tnr * {
+    font-family: "Times New Roman", Times, serif !important;
+}
+
+/* DRUKOWANIE */
 @media print {
     body * {
-        visibility: hidden;
+        visibility: hidden !important;
     }
-    .printable-area, .printable-area * {
-        visibility: visible;
+    .receipt-thermal-paper, .receipt-thermal-paper *,
+    .report-paper-tnr, .report-paper-tnr * {
+        visibility: visible !important;
     }
-    .printable-area {
+    .receipt-thermal-paper {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 75mm;
+        margin: 0;
+        padding: 4mm;
+        box-shadow: none;
+    }
+    .report-paper-tnr {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-        background: #fff !important;
-        color: #000 !important;
-        border: none !important;
-        box-shadow: none !important;
+        margin: 0;
+        padding: 10mm;
+        box-shadow: none;
     }
     .no-print {
         display: none !important;

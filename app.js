@@ -31,21 +31,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalWObiegu = document.getElementById('total-w-obiegu');
     const lastMoveText = document.getElementById('last-move-text');
 
-    // Tiles
+    // Kafelki
     const tileAddLoan = document.getElementById('tile-add-loan');
     const tileKasetka = document.getElementById('tile-kasetka');
+    const tileGoals = document.getElementById('tile-goals');
     const tileScanner = document.getElementById('tile-scanner');
     const tileReport = document.getElementById('tile-report');
 
-    // Modals
+    // Modale
     const modalLoan = document.getElementById('modal-loan');
     const modalPayment = document.getElementById('modal-payment');
+    const modalGoals = document.getElementById('modal-goals');
+    const modalDepositGoal = document.getElementById('modal-deposit-goal');
     const modalReceipt = document.getElementById('modal-receipt');
     const modalKasetka = document.getElementById('modal-kasetka');
     const modalScanner = document.getElementById('modal-scanner');
     const modalReport = document.getElementById('modal-report');
 
-    // Forms
+    // Formularze
     const loanForm = document.getElementById('loan-form');
     const loanPerson = document.getElementById('loan-person');
     const loanAmount = document.getElementById('loan-amount');
@@ -56,6 +59,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const paymentAmountInput = document.getElementById('payment-amount-input');
     const paymentClientInfo = document.getElementById('payment-client-info');
 
+    // Formularze Celów
+    const goalCreateForm = document.getElementById('goal-create-form');
+    const goalNameInput = document.getElementById('goal-name-input');
+    const goalDescInput = document.getElementById('goal-desc-input');
+    const goalTargetInput = document.getElementById('goal-target-input');
+    const goalsListContainer = document.getElementById('goals-list-container');
+
+    const depositGoalForm = document.getElementById('deposit-goal-form');
+    const depositGoalIndex = document.getElementById('deposit-goal-index');
+    const depositGoalAmount = document.getElementById('deposit-goal-amount');
+    const depositGoalInfo = document.getElementById('deposit-goal-info');
+    const btnCloseDeposit = document.getElementById('btn-close-deposit');
+
     const receiptContent = document.getElementById('receipt-content');
     const qrcodeDiv = document.getElementById('qrcode');
     const kasetkaInputValue = document.getElementById('kasetka-input-value');
@@ -65,16 +81,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalEnter = document.getElementById('terminal-enter');
 
     let currentTab = 'splacone';
-    let currentData = { kasetka: 1000, loans: [], lastMove: 'Brak' };
+    let currentData = { kasetka: 1000, loans: [], goals: [], lastMove: 'Brak' };
     let unsubscribeFirestore = null;
 
-    // Automatyczne logowanie sesji
+    // Automatyczne logowanie sesyjne
     const loggedUser = sessionStorage.getItem('bmcredo_logged_user');
     if (loggedUser) {
         approveLogin(loggedUser);
     }
 
-    // Rejestracja
+    // Rejestracja w Firebase
     btnRegister.addEventListener('click', async () => {
         const u = usernameInput.value.trim().toLowerCase();
         const p = passwordInput.value.trim();
@@ -91,6 +107,14 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('pos_data').doc(u).set({
                 kasetka: 1000,
                 lastMove: '+ Urszula Bugajska (+60 zł)',
+                goals: [
+                    {
+                        name: 'Fundusz Rezerwowy',
+                        desc: 'Zabezpieczenie płynności kasy',
+                        target: '2000.00',
+                        current: '250.00'
+                    }
+                ],
                 loans: [
                     {
                         code: 'P-101',
@@ -158,8 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .onSnapshot((doc) => {
                 if (doc.exists) {
                     currentData = doc.data();
+                    if (!currentData.goals) currentData.goals = [];
                 } else {
-                    currentData = { kasetka: 1000, loans: [], lastMove: 'Brak' };
+                    currentData = { kasetka: 1000, loans: [], goals: [], lastMove: 'Brak' };
                 }
                 renderApp();
             }, (error) => {
@@ -175,11 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Zamykanie okien modalnych
+    // Zamykanie modali
     document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', () => {
             modalLoan.style.display = 'none';
             modalPayment.style.display = 'none';
+            modalGoals.style.display = 'none';
+            modalDepositGoal.style.display = 'none';
             modalReceipt.style.display = 'none';
             modalKasetka.style.display = 'none';
             modalScanner.style.display = 'none';
@@ -188,6 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 html5QrCode.stop().then(() => { html5QrCode = null; }).catch(() => {});
             }
         });
+    });
+
+    btnCloseDeposit.addEventListener('click', () => {
+        modalDepositGoal.style.display = 'none';
     });
 
     // Zakładki
@@ -213,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 0);
 
         countActive.textContent = activeLoans.length;
-        totalKasetka.textContent = `${data.kasetka || 0} zł`;
+        totalKasetka.textContent = `${parseFloat(data.kasetka || 0).toFixed(2)} zł`;
         totalWObiegu.textContent = `${wObieguSum.toFixed(2)} zł`;
         lastMoveText.textContent = data.lastMove || 'Brak';
 
@@ -258,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="client-code">[${loan.code}]</span>
                 </div>
                 <div class="card-mid-row">
-                    <span>POŻYCZONO: ${total.toFixed(2)} zł</span>
+                    <span>POŻYCZKA: ${total.toFixed(2)} zł</span>
                     <span>WPŁACONO: ${paid.toFixed(2)} zł</span>
                     <span style="color:${loan.splacone ? '#68ad48' : '#d89f53'};">POZOSTAŁO: ${remaining} zł</span>
                 </div>
@@ -268,13 +299,49 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${statusHtml}
                         <div class="card-actions">
                             <button onclick="window.openPaymentModal(${originalIndex})" class="action-btn action-pay">[WPŁATA]</button>
-                            <button onclick="window.toggleStatus(${originalIndex})" class="action-btn action-status">[STATUS]</button>
                             <button onclick="window.deleteLoan(${originalIndex})" class="action-btn action-delete">[USUŃ]</button>
                         </div>
                     </div>
                 </div>
             `;
             loansList.appendChild(card);
+        });
+
+        renderGoalsList();
+    }
+
+    // Renderowanie celów
+    function renderGoalsList() {
+        const goals = currentData.goals || [];
+        goalsListContainer.innerHTML = '';
+
+        if (goals.length === 0) {
+            goalsListContainer.innerHTML = '<div style="font-size:0.7rem; color:#7f9372; text-align:center; padding:10px;">Brak zdefiniowanych celów. Utwórz pierwszy powyżej!</div>';
+            return;
+        }
+
+        goals.forEach((goal, idx) => {
+            const current = parseFloat(goal.current || 0);
+            const target = parseFloat(goal.target || 1);
+            const percent = Math.min(100, Math.round((current / target) * 100));
+
+            const div = document.createElement('div');
+            div.className = 'goal-card';
+            div.innerHTML = `
+                <div class="goal-header-row">
+                    <b>${goal.name}</b>
+                    <span>${current.toFixed(2)} / ${target.toFixed(2)} zł (${percent}%)</span>
+                </div>
+                <div class="goal-desc-txt">${goal.desc || 'Brak opisu'}</div>
+                <div class="goal-progress-bar-bg">
+                    <div class="goal-progress-fill" style="width: ${percent}%;"></div>
+                </div>
+                <div class="goal-footer-row">
+                    <button onclick="window.openDepositGoalModal(${idx})" class="retro-btn" style="padding:2px 8px; font-size:0.6rem;">+ WPŁAĆ Z KASETKI</button>
+                    <button onclick="window.deleteGoal(${idx})" style="background:none; border:none; color:#c95144; font-size:0.6rem; cursor:pointer;">[USUŃ CEL]</button>
+                </div>
+            `;
+            goalsListContainer.appendChild(div);
         });
     }
 
@@ -316,40 +383,38 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCloudData(user, data);
 
         modalLoan.style.display = 'none';
-
-        // Generowanie paragonu do druku
         showReceipt(newLoan);
     });
 
+    // 2. GENEROWANIE PARAGONU TIMES NEW ROMAN
     function showReceipt(loan) {
         const zwrotDate = new Date(loan.date || new Date());
         zwrotDate.setDate(zwrotDate.getDate() + 14);
 
         receiptContent.innerHTML = `
-            ========================================<br>
-            KOD DOKUMENTU: <b>${loan.code}</b><br>
-            DATA ZAWARCIA: ${new Date(loan.date || new Date()).toLocaleString()}<br>
-            POŻYCZKA DLA : <b>${loan.fullName || loan.name}</b><br>
-            ----------------------------------------<br>
-            KWOTA POŻYCZKI    : <b>${parseFloat(loan.amount).toFixed(2)} PLN</b><br>
-            WPŁACONO DOTYCHCZAS: <b>${parseFloat(loan.paidAmount || 0).toFixed(2)} PLN</b><br>
-            ODSETKI PO 14 DNI : <b>${loan.interest}%</b><br>
-            TERMIN ODSETKOWY  : <b>${zwrotDate.toLocaleDateString()}</b><br>
-            STATUS UMOWY      : <b>${loan.splacone ? 'SPŁACONE' : 'W TRAKCIE SPŁATY'}</b><br>
-            ========================================
+            <div><b>KOD UMOWY:</b> ${loan.code}</div>
+            <div><b>DATA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
+            <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
+            <div style="margin: 4px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 4px 0;">
+                <div>KWOTA POŻYCZKI: <b>${parseFloat(loan.amount).toFixed(2)} PLN</b></div>
+                <div>WPŁACONO: <b>${parseFloat(loan.paidAmount || 0).toFixed(2)} PLN</b></div>
+                <div>ODSETKI PO 14 DNI: <b>${loan.interest}%</b></div>
+                <div>TERMIN ODSETKOWY: <b>${zwrotDate.toLocaleDateString()}</b></div>
+            </div>
+            <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
         `;
 
         qrcodeDiv.innerHTML = '';
         new QRCode(qrcodeDiv, {
             text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${loan.amount}|${loan.interest}`,
-            width: 130,
-            height: 130
+            width: 110,
+            height: 110
         });
 
         modalReceipt.style.display = 'flex';
     }
 
-    // 2. WPŁATA CZĘŚCIOWA / CAŁKOWITA
+    // 3. WPŁATA DŁUŻNIKA
     window.openPaymentModal = function(index) {
         const loan = currentData.loans[index];
         paymentLoanIndex.value = index;
@@ -359,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         paymentClientInfo.innerHTML = `
             KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO DO SPŁATY: <b>${remaining} zł</b>
+            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO: <b>${remaining} zł</b>
         `;
         paymentAmountInput.value = remaining;
         paymentAmountInput.max = remaining;
@@ -385,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPaid = currentPaid + payVal;
         loan.paidAmount = newPaid.toFixed(2);
 
-        // Zwiększ stan kasetki o wpłaconą gotówkę
         data.kasetka = (parseFloat(data.kasetka || 0) + payVal).toFixed(2);
 
         if (newPaid >= total) {
@@ -399,11 +463,88 @@ document.addEventListener('DOMContentLoaded', () => {
         modalPayment.style.display = 'none';
     });
 
-    // 3. USUWANIE POŻYCZKI
+    // 4. MODUŁ CELE I WPŁATY Z KASETKI
+    tileGoals.addEventListener('click', () => {
+        modalGoals.style.display = 'flex';
+        renderGoalsList();
+    });
+
+    goalCreateForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        if (!data.goals) data.goals = [];
+
+        const newGoal = {
+            name: goalNameInput.value.trim(),
+            desc: goalDescInput.value.trim(),
+            target: parseFloat(goalTargetInput.value).toFixed(2),
+            current: '0.00'
+        };
+
+        data.goals.push(newGoal);
+        data.lastMove = `Nowy cel: ${newGoal.name}`;
+        saveCloudData(user, data);
+
+        goalNameInput.value = '';
+        goalDescInput.value = '';
+        goalTargetInput.value = '';
+        renderGoalsList();
+    });
+
+    window.openDepositGoalModal = function(goalIdx) {
+        const goal = currentData.goals[goalIdx];
+        depositGoalIndex.value = goalIdx;
+        depositGoalInfo.innerHTML = `
+            CEL: <b>${goal.name}</b><br>
+            Stan celu: <b>${goal.current} / ${goal.target} zł</b><br>
+            Dostępne w kasetce: <b>${parseFloat(currentData.kasetka || 0).toFixed(2)} zł</b>
+        `;
+        depositGoalAmount.value = '';
+        modalDepositGoal.style.display = 'flex';
+    };
+
+    depositGoalForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        const gIdx = parseInt(depositGoalIndex.value);
+        const depAmount = parseFloat(depositGoalAmount.value);
+        const kasetkaStan = parseFloat(data.kasetka || 0);
+
+        if (isNaN(depAmount) || depAmount <= 0) {
+            alert('Wpisz poprawną kwotę wpłaty!');
+            return;
+        }
+
+        if (depAmount > kasetkaStan) {
+            alert(`Brak tylu środków w kasetce! Dostępne: ${kasetkaStan.toFixed(2)} zł`);
+            return;
+        }
+
+        // Odejmij z kasetki i dodaj do celu
+        data.kasetka = (kasetkaStan - depAmount).toFixed(2);
+        data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
+        data.lastMove = `Cel [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
+
+        saveCloudData(user, data);
+        modalDepositGoal.style.display = 'none';
+        renderGoalsList();
+    });
+
+    window.deleteGoal = function(goalIdx) {
+        if (!confirm(`Czy usunąć cel: "${currentData.goals[goalIdx].name}"?`)) return;
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        data.goals.splice(goalIdx, 1);
+        saveCloudData(user, data);
+        renderGoalsList();
+    };
+
+    // 5. USUWANIE POŻYCZKI
     window.deleteLoan = function(index) {
         const loan = currentData.loans[index];
-        const confirmDelete = confirm(`Czy na pewno chcesz USUNĄĆ pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}? Tej operacji nie można cofnąć.`);
-        if (!confirmDelete) return;
+        if (!confirm(`Usunąć pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`)) return;
 
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
@@ -412,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCloudData(user, data);
     };
 
-    // 4. KASETKA
+    // 6. KASETKA
     tileKasetka.addEventListener('click', () => {
         kasetkaInputValue.value = currentData.kasetka || 0;
         modalKasetka.style.display = 'flex';
@@ -434,7 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalKasetka.style.display = 'none';
     });
 
-    // 5. KAMERA QR
+    // 7. KAMERA QR
     let html5QrCode = null;
     tileScanner.addEventListener('click', () => {
         modalScanner.style.display = 'flex';
@@ -473,17 +614,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 6. RAPORT DOBOWY A4 (DO DRUKU)
+    // 8. RAPORT DOBOWY A4 TIMES NEW ROMAN
     tileReport.addEventListener('click', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         const loans = data.loans || [];
+        const goals = data.goals || [];
         
         const activeLoans = loans.filter(l => !l.splacone);
         const splaconeLoans = loans.filter(l => l.splacone);
 
         const totalObieg = activeLoans.reduce((acc, l) => acc + (parseFloat(l.amount || 0) - parseFloat(l.paidAmount || 0)), 0);
         const totalWplacone = loans.reduce((acc, l) => acc + parseFloat(l.paidAmount || 0), 0);
+        const totalWCelach = goals.reduce((acc, g) => acc + parseFloat(g.current || 0), 0);
 
         let tableRows = '';
         loans.forEach((l, i) => {
@@ -494,62 +637,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tableRows += `
                 <tr>
-                    <td style="border:1px solid #111; padding:4px;">${i+1}</td>
-                    <td style="border:1px solid #111; padding:4px;"><b>${l.code}</b></td>
-                    <td style="border:1px solid #111; padding:4px;">${l.fullName || l.name}</td>
-                    <td style="border:1px solid #111; padding:4px; text-align:right;">${total} zł</td>
-                    <td style="border:1px solid #111; padding:4px; text-align:right;">${paid} zł</td>
-                    <td style="border:1px solid #111; padding:4px; text-align:right;">${remaining} zł</td>
-                    <td style="border:1px solid #111; padding:4px; text-align:center;">${status}</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:center;">${i+1}</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:center;"><b>${l.code}</b></td>
+                    <td style="border:1px solid #000; padding:5px;">${l.fullName || l.name}</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${total} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${paid} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${remaining} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:center;">${status}</td>
                 </tr>
             `;
         });
 
+        let goalsSummary = '';
+        if (goals.length > 0) {
+            goalsSummary = '<div style="margin-top:10px;"><b>ZESTAWIENIE CELÓW OSZCZĘDNOŚCIOWYCH:</b><br>';
+            goals.forEach((g) => {
+                goalsSummary += `• ${g.name}: ${parseFloat(g.current).toFixed(2)} zł / ${parseFloat(g.target).toFixed(2)} zł<br>`;
+            });
+            goalsSummary += '</div>';
+        }
+
         reportContent.innerHTML = `
             <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:12px;">
-                <h2 style="font-size:1.3rem;">RAPORT DOBOWY KASY POŻYCZKOWEJ POS</h2>
-                <p>System: BMCredo | Operator: <b>${user.toUpperCase()}</b> | Wygenerowano: ${new Date().toLocaleString()}</p>
+                <h2 style="font-size:16pt; font-weight:bold; margin-bottom:4px;">RAPORT DOBOWY KASY POŻYCZKOWEJ</h2>
+                <p style="font-size:11pt;">System: BMCredo POS | Operator kasy: <b>${user.toUpperCase()}</b></p>
+                <p style="font-size:10pt;">Data i godzina wygenerowania: ${new Date().toLocaleString()}</p>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; border:1px dashed #333; padding:8px;">
-                <div>
-                    <b>STAN KASETKI:</b> ${data.kasetka} PLN<br>
-                    <b>POŻYCZKI AKTYWNE:</b> ${activeLoans.length} szt.<br>
-                    <b>POŻYCZKI SPŁACONE:</b> ${splaconeLoans.length} szt.
-                </div>
-                <div style="text-align:right;">
-                    <b>SUMA W OBIEGU (DO SPŁATY):</b> ${totalObieg.toFixed(2)} PLN<br>
-                    <b>ŁĄCZNIE WPŁACONE:</b> ${totalWplacone.toFixed(2)} PLN
-                </div>
+            <div style="border:1px solid #000; padding:10px; margin-bottom:15px; background:#fbfbfb;">
+                <table style="width:100%; border:none; font-size:11pt;">
+                    <tr>
+                        <td style="width:50%;"><b>STAN GOTÓWKI W KASETCE:</b></td>
+                        <td style="text-align:right;"><b>${parseFloat(data.kasetka || 0).toFixed(2)} PLN</b></td>
+                    </tr>
+                    <tr>
+                        <td><b>ŚRODKI ZGROMADZONE W CELACH:</b></td>
+                        <td style="text-align:right;"><b>${totalWCelach.toFixed(2)} PLN</b></td>
+                    </tr>
+                    <tr>
+                        <td><b>SUMA POŻYCZEK W OBIEGU (DO ZWROTU):</b></td>
+                        <td style="text-align:right;"><b>${totalObieg.toFixed(2)} PLN</b></td>
+                    </tr>
+                    <tr>
+                        <td><b>ŁĄCZNA SUMA ZAREJESTROWANYCH WPŁAT:</b></td>
+                        <td style="text-align:right;"><b>${totalWplacone.toFixed(2)} PLN</b></td>
+                    </tr>
+                    <tr>
+                        <td><b>LICZBA POŻYCZEK (AKTYWNE / SPŁACONE):</b></td>
+                        <td style="text-align:right;">${activeLoans.length} szt. / ${splaconeLoans.length} szt.</td>
+                    </tr>
+                </table>
+                ${goalsSummary}
             </div>
 
-            <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+            <h3 style="font-size:12pt; margin-bottom:6px;">SZCZEGÓŁOWY WYKAZ POZYCJI:</h3>
+            <table style="width:100%; border-collapse:collapse; font-size:10pt;">
                 <thead>
-                    <tr style="background:#eee;">
-                        <th style="border:1px solid #111; padding:4px;">LP</th>
-                        <th style="border:1px solid #111; padding:4px;">KOD</th>
-                        <th style="border:1px solid #111; padding:4px;">KLIENT</th>
-                        <th style="border:1px solid #111; padding:4px;">KWOTA</th>
-                        <th style="border:1px solid #111; padding:4px;">WPŁACONO</th>
-                        <th style="border:1px solid #111; padding:4px;">SALDO</th>
-                        <th style="border:1px solid #111; padding:4px;">STATUS</th>
+                    <tr style="background:#f0f0f0;">
+                        <th style="border:1px solid #000; padding:5px;">LP</th>
+                        <th style="border:1px solid #000; padding:5px;">KOD</th>
+                        <th style="border:1px solid #000; padding:5px;">KLIENT / DŁUŻNIK</th>
+                        <th style="border:1px solid #000; padding:5px;">KWOTA</th>
+                        <th style="border:1px solid #000; padding:5px;">WPŁACONO</th>
+                        <th style="border:1px solid #000; padding:5px;">SALDO</th>
+                        <th style="border:1px solid #000; padding:5px;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableRows || '<tr><td colspan="7" style="text-align:center; padding:10px;">Brak wpisów w bazie.</td></tr>'}
+                    ${tableRows || '<tr><td colspan="7" style="text-align:center; padding:10px;">Brak pozycji do wyświetlenia.</td></tr>'}
                 </tbody>
             </table>
 
-            <div style="margin-top:30px; display:flex; justify-content:space-between; font-size:0.75rem;">
-                <div>...........................................<br>Podpis Kierownika Zmiany</div>
-                <div>...........................................<br>Podpis Operatora Kasy</div>
+            <div style="margin-top:40px; display:flex; justify-content:space-between; font-size:11pt;">
+                <div style="text-align:center;">...................................................<br>Podpis Kierownika Zmiany</div>
+                <div style="text-align:center;">...................................................<br>Podpis Operatora Kasy</div>
             </div>
         `;
 
         modalReport.style.display = 'flex';
     });
 
-    // 7. TERMINAL
+    // 9. TERMINAL
     function handleTerminalAction() {
         const val = terminalInput.value.trim();
         if (!val) return;
@@ -560,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const found = loans.find(l => l.code.toUpperCase() === val.toUpperCase());
         if (found) {
             found.splacone = !found.splacone;
-            data.lastMove = `Zmieniono: ${found.code}`;
+            data.lastMove = `Kod terminala: ${found.code}`;
         } else {
             loans.push({
                 code: val.toUpperCase(),
@@ -583,13 +751,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     terminalEnter.addEventListener('click', handleTerminalAction);
     terminalInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleTerminalAction(); });
-
-    // Zmiana statusu
-    window.toggleStatus = function(index) {
-        const user = sessionStorage.getItem('bmcredo_logged_user');
-        const data = currentData;
-        data.loans[index].splacone = !data.loans[index].splacone;
-        data.lastMove = `Status: ${data.loans[index].name}`;
-        saveCloudData(user, data);
-    };
 });
