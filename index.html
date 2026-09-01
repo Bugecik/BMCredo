@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -98,6 +98,13 @@
                 </div>
             </div>
 
+            <!-- ZYSK Z ODSETEK / INFO -->
+            <div class="outer-box profit-box">
+                <div class="sub-label">CZYSTY ZYSK (ODSETKI):</div>
+                <div class="profit-val" id="total-profit-display">+0.00 zł</div>
+                <button type="button" id="btn-transfer-profit" class="profit-transfer-btn">PRZELEJ ZYSK NA CEL</button>
+            </div>
+
             <div class="outer-box last-move-box">
                 <div class="sub-label">OSTATNI RUCH:</div>
                 <div class="last-move-val" id="last-move-text">+ Brak</div>
@@ -144,6 +151,7 @@
     <div id="modal-loan" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ NOWA POŻYCZKA ]</div>
+            <div id="client-rating-warning" class="rating-warning-box" style="display:none;"></div>
             <form id="loan-form">
                 <div class="m-input-group">
                     <label>KTO BIERZE (KLIENT):</label>
@@ -155,7 +163,7 @@
                 </div>
                 <div class="m-input-group">
                     <label>ODSETKI PO 14 DNIACH (%):</label>
-                    <input type="number" step="0.1" id="loan-interest" value="5">
+                    <input type="number" step="0.1" id="loan-interest" value="10">
                 </div>
                 <div class="m-btn-group">
                     <button type="submit" class="retro-btn">ZAPISZ & PARAGON</button>
@@ -165,7 +173,26 @@
         </div>
     </div>
 
-    <!-- 2. MODAL REJESTROWANIA WPŁATY -->
+    <!-- 2. MODAL PROLONGATY (+14 DNI) -->
+    <div id="modal-prolong" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ PROLONGATA TERMINU +14 DNI ]</div>
+            <div id="prolong-client-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
+            <form id="prolong-form">
+                <input type="hidden" id="prolong-loan-index">
+                <div class="m-input-group">
+                    <label>OPŁATA ZA PRZEDŁUŻENIE (ZYSK DO KASETKI ZŁ):</label>
+                    <input type="number" step="0.01" id="prolong-fee-input" required value="20.00">
+                </div>
+                <div class="m-btn-group">
+                    <button type="submit" class="retro-btn">PRZEDŁUŻ O 14 DNI</button>
+                    <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. MODAL REJESTROWANIA WPŁATY -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -184,12 +211,11 @@
         </div>
     </div>
 
-    <!-- 3. MODAL CELE / SKARBONKA -->
+    <!-- 4. MODAL CELE / SKARBONKA -->
     <div id="modal-goals" class="modal-backdrop" style="display:none;">
         <div class="modal-window goals-window">
             <div class="modal-header">[ CELE FINANSOWE / SKARBONKA ]</div>
             
-            <!-- Tworzenie nowego celu -->
             <form id="goal-create-form" style="border-bottom: 2px dashed #293223; padding-bottom: 12px; margin-bottom: 12px;">
                 <div class="m-input-group">
                     <label>NAZWA CELU (NA CO ZBIERASZ):</label>
@@ -215,7 +241,7 @@
         </div>
     </div>
 
-    <!-- 4. MODAL WPŁATY NA CEL Z KASETKI -->
+    <!-- 5. MODAL WPŁATY NA CEL Z KASETKI -->
     <div id="modal-deposit-goal" class="modal-backdrop" style="display:none; z-index:10000;">
         <div class="modal-window">
             <div class="modal-header">[ WPŁATA Z KASETKI NA CEL ]</div>
@@ -234,7 +260,7 @@
         </div>
     </div>
 
-    <!-- 5. MODAL PARAGONU DLA DRUKARKI PARAGONÓW (TIMES NEW ROMAN) -->
+    <!-- 6. MODAL PARAGONU (TIMES NEW ROMAN) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
         <div class="modal-window receipt-wrapper">
             <div id="receipt-printable" class="receipt-thermal-paper">
@@ -260,7 +286,7 @@
         </div>
     </div>
 
-    <!-- 6. MODAL KASETKI -->
+    <!-- 7. MODAL KASETKI -->
     <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ STAN KASETKI ]</div>
@@ -283,7 +309,7 @@
         </div>
     </div>
 
-    <!-- 7. MODAL SKANERA QR -->
+    <!-- 8. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -292,7 +318,7 @@
         </div>
     </div>
 
-    <!-- 8. MODAL RAPORTU DOBOWEGO A4 (TIMES NEW ROMAN) -->
+    <!-- 9. MODAL RAPORTU DOBOWEGO A4 (TIMES NEW ROMAN) -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
             <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
@@ -304,6 +330,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=7"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>

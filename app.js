@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalKasetka = document.getElementById('total-kasetka');
     const totalWObiegu = document.getElementById('total-w-obiegu');
     const lastMoveText = document.getElementById('last-move-text');
+    const totalProfitDisplay = document.getElementById('total-profit-display');
+    const btnTransferProfit = document.getElementById('btn-transfer-profit');
 
     // Kafelki
     const tileAddLoan = document.getElementById('tile-add-loan');
@@ -40,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Modale
     const modalLoan = document.getElementById('modal-loan');
+    const modalProlong = document.getElementById('modal-prolong');
     const modalPayment = document.getElementById('modal-payment');
     const modalGoals = document.getElementById('modal-goals');
     const modalDepositGoal = document.getElementById('modal-deposit-goal');
@@ -53,6 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loanPerson = document.getElementById('loan-person');
     const loanAmount = document.getElementById('loan-amount');
     const loanInterest = document.getElementById('loan-interest');
+    const clientRatingWarning = document.getElementById('client-rating-warning');
+
+    const prolongForm = document.getElementById('prolong-form');
+    const prolongLoanIndex = document.getElementById('prolong-loan-index');
+    const prolongFeeInput = document.getElementById('prolong-fee-input');
+    const prolongClientInfo = document.getElementById('prolong-client-info');
 
     const paymentForm = document.getElementById('payment-form');
     const paymentLoanIndex = document.getElementById('payment-loan-index');
@@ -81,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalEnter = document.getElementById('terminal-enter');
 
     let currentTab = 'splacone';
-    let currentData = { kasetka: 1000, loans: [], goals: [], lastMove: 'Brak' };
+    let currentData = { kasetka: 1000, loans: [], goals: [], earnedProfit: 0, lastMove: 'Brak' };
     let unsubscribeFirestore = null;
 
     // Automatyczne logowanie sesyjne
@@ -106,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await db.collection('users').doc(u).set({ password: p });
             await db.collection('pos_data').doc(u).set({
                 kasetka: 1000,
+                earnedProfit: 0,
                 lastMove: '+ Urszula Bugajska (+60 zł)',
                 goals: [
                     {
@@ -122,10 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         fullName: 'Urszula Bugajska',
                         amount: '60.00',
                         paidAmount: '60.00',
-                        interest: '5',
+                        interest: '10',
                         odKiedy: '0d TEMU',
                         date: new Date().toISOString(),
-                        splacone: true
+                        splacone: true,
+                        prolongations: 0
                     }
                 ]
             });
@@ -184,8 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentData = doc.data();
                     if (!currentData.goals) currentData.goals = [];
                     if (!currentData.loans) currentData.loans = [];
+                    if (currentData.earnedProfit === undefined) currentData.earnedProfit = 0;
                 } else {
-                    currentData = { kasetka: 1000, loans: [], goals: [], lastMove: 'Brak' };
+                    currentData = { kasetka: 1000, loans: [], goals: [], earnedProfit: 0, lastMove: 'Brak' };
                 }
                 renderApp();
             }, (error) => {
@@ -201,10 +213,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // === SILNIK NALICZANIA ODSETEK DLA POŻYCZKI ===
+    function calculateLoanDetails(loan) {
+        const principal = parseFloat(loan.amount || 0);
+        const paid = parseFloat(loan.paidAmount || 0);
+        const interestRate = parseFloat(loan.interest || 0);
+        const createdDate = new Date(loan.date || new Date());
+        const now = new Date();
+
+        // Różnica w dniach
+        const diffTime = Math.abs(now - createdDate);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        let accruedInterest = 0;
+        let isOverdue = false;
+
+        // Naliczanie odsetek jeśli upłynęło więcej niż 14 dni
+        if (diffDays > 14 && !loan.splacone) {
+            isOverdue = true;
+            // Odsetki procentowe liczone od kwoty głównej za okres po 14 dniach
+            const overduePeriods = Math.ceil((diffDays - 14) / 7); // za każdy rozpoczęty tydzień po terminie
+            accruedInterest = principal * (interestRate / 100) * overduePeriods;
+        }
+
+        const totalToRepay = principal + accruedInterest;
+        const remainingToPay = Math.max(0, totalToRepay - paid);
+
+        return {
+            principal,
+            paid,
+            accruedInterest,
+            totalToRepay,
+            remainingToPay,
+            diffDays,
+            isOverdue
+        };
+    }
+
+    // === MODUŁ RATINGU KLIENTA (A / B / C) ===
+    function getClientRating(clientName) {
+        const cleanName = clientName.trim().toLowerCase();
+        const history = currentData.loans.filter(l => (l.fullName || l.name).toLowerCase() === cleanName);
+
+        if (history.length === 0) return { grade: 'A', text: 'NOWY KLIENT', badgeClass: 'rating-a' };
+
+        let overdueCount = 0;
+        let activeOverdue = false;
+
+        history.forEach(l => {
+            const details = calculateLoanDetails(l);
+            if (details.isOverdue) {
+                overdueCount++;
+                if (!l.splacone) activeOverdue = true;
+            }
+        });
+
+        if (activeOverdue || overdueCount >= 2) {
+            return { grade: 'C', text: `CZARNA LISTA (${overdueCount}x ZWŁOKA)`, badgeClass: 'rating-c' };
+        } else if (overdueCount === 1) {
+            return { grade: 'B', text: 'SPÓŹNIALSKI (1x ZWŁOKA)', badgeClass: 'rating-b' };
+        } else {
+            return { grade: 'A', text: 'WZOROWY KLIENT', badgeClass: 'rating-a' };
+        }
+    }
+
     // Zamykanie modali
     document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', () => {
             modalLoan.style.display = 'none';
+            modalProlong.style.display = 'none';
             modalPayment.style.display = 'none';
             modalGoals.style.display = 'none';
             modalDepositGoal.style.display = 'none';
@@ -234,33 +311,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Renderowanie widoku
+    // RYSOWANIE GŁÓWNEGO WIDOKU
     function renderApp() {
         const data = currentData;
         const loans = data.loans || [];
 
         let activeLoans = loans.filter(l => !l.splacone);
         let wObieguSum = activeLoans.reduce((acc, l) => {
-            const total = parseFloat(l.amount || 0);
-            const paid = parseFloat(l.paidAmount || 0);
-            return acc + (total - paid);
+            const details = calculateLoanDetails(l);
+            return acc + details.remainingToPay;
         }, 0);
 
         countActive.textContent = activeLoans.length;
         totalKasetka.textContent = `${parseFloat(data.kasetka || 0).toFixed(2)} zł`;
         totalWObiegu.textContent = `${wObieguSum.toFixed(2)} zł`;
         lastMoveText.textContent = data.lastMove || 'Brak';
+        totalProfitDisplay.textContent = `+${parseFloat(data.earnedProfit || 0).toFixed(2)} zł`;
 
         let filtered = loans;
-        const now = new Date();
 
         if (currentTab === 'do-splaty') {
             filtered = loans.filter(l => !l.splacone);
         } else if (currentTab === 'odsetki') {
             filtered = loans.filter(l => {
                 if (l.splacone) return false;
-                const diffDays = Math.ceil(Math.abs(now - new Date(l.date || now)) / (1000 * 60 * 60 * 24));
-                return diffDays > 14;
+                const details = calculateLoanDetails(l);
+                return details.isOverdue;
             });
         } else if (currentTab === 'splacone') {
             filtered = loans.filter(l => l.splacone);
@@ -277,31 +353,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.createElement('div');
             card.className = 'retro-loan-card';
             
-            const total = parseFloat(loan.amount || 0);
-            const paid = parseFloat(loan.paidAmount || 0);
-            const remaining = (total - paid).toFixed(2);
+            const details = calculateLoanDetails(loan);
+            const rating = getClientRating(loan.fullName || loan.name);
 
             let statusHtml = '<span class="status-tag status-aktywna">AKTYWNA</span>';
             if (loan.splacone) {
                 statusHtml = '<span class="status-tag status-splacone">SPŁACONE</span>';
+            } else if (details.isOverdue) {
+                statusHtml = `<span class="status-tag status-odsetki">ODSETKI (${details.diffDays}d)</span>`;
+            }
+
+            let interestLine = '';
+            if (details.accruedInterest > 0 && !loan.splacone) {
+                interestLine = `<div class="interest-warn">NALICZONE ODSETKI: +${details.accruedInterest.toFixed(2)} zł</div>`;
             }
 
             card.innerHTML = `
                 <div class="card-top-row">
-                    <span class="client-name">${loan.name}</span>
+                    <div>
+                        <span class="client-name">${loan.name}</span>
+                        <span class="rating-badge ${rating.badgeClass}">${rating.grade}</span>
+                    </div>
                     <span class="client-code">[${loan.code}]</span>
                 </div>
                 <div class="card-mid-row">
-                    <span>POŻYCZKA: ${total.toFixed(2)} zł</span>
-                    <span>WPŁACONO: ${paid.toFixed(2)} zł</span>
-                    <span style="color:${loan.splacone ? '#68ad48' : '#d89f53'};">POZOSTAŁO: ${remaining} zł</span>
+                    <div>KAPITAŁ: ${details.principal.toFixed(2)} zł | WPŁACONO: ${details.paid.toFixed(2)} zł</div>
+                    ${interestLine}
+                    <div style="color:${loan.splacone ? '#68ad48' : '#d89f53'}; font-weight:bold;">
+                        ŁĄCZNIE DO SPŁATY: ${details.remainingToPay.toFixed(2)} zł
+                    </div>
                 </div>
                 <div class="card-bottom-row">
-                    <span class="time-ago">${loan.odKiedy || '0d TEMU'}</span>
+                    <span class="time-ago">${details.diffDays}d TEMU ${loan.prolongations ? `[PROL: ${loan.prolongations}x]` : ''}</span>
                     <div style="text-align:right;">
                         ${statusHtml}
                         <div class="card-actions">
                             <button onclick="window.openPaymentModal(${originalIndex})" class="action-btn action-pay">[WPŁATA]</button>
+                            ${!loan.splacone ? `<button onclick="window.openProlongModal(${originalIndex})" class="action-btn action-prolong">[PROLONGATA]</button>` : ''}
                             <button onclick="window.reprintReceipt(${originalIndex})" class="action-btn" style="color:#d89f53; background:var(--border-inner);">[PARAGON]</button>
                             <button onclick="window.deleteLoan(${originalIndex})" class="action-btn action-delete">[USUŃ]</button>
                         </div>
@@ -352,12 +440,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 1. + POŻYCZKA
+    // 1. + POŻYCZKA Z PODGLĄDEM RATINGU
     tileAddLoan.addEventListener('click', () => {
         loanPerson.value = '';
         loanAmount.value = '';
-        loanInterest.value = '5';
+        loanInterest.value = '10';
+        clientRatingWarning.style.display = 'none';
         modalLoan.style.display = 'flex';
+    });
+
+    loanPerson.addEventListener('input', () => {
+        const val = loanPerson.value.trim();
+        if (val.length >= 3) {
+            const rating = getClientRating(val);
+            if (rating.grade === 'C') {
+                clientRatingWarning.style.display = 'block';
+                clientRatingWarning.innerHTML = `⚠️ <b>UWAGA (CZARNA LISTA):</b> Klient ma historię problemów ze spłatą!`;
+            } else if (rating.grade === 'B') {
+                clientRatingWarning.style.display = 'block';
+                clientRatingWarning.innerHTML = `ℹ️ <b>UWAGA:</b> Klient miewał opóźnienia w spłacie.`;
+            } else {
+                clientRatingWarning.style.display = 'none';
+            }
+        } else {
+            clientRatingWarning.style.display = 'none';
+        }
     });
 
     loanForm.addEventListener('submit', (e) => {
@@ -378,11 +485,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (amountNum > currentKasetka) {
-            const proceed = confirm(`Uwaga: W kasetce jest tylko ${currentKasetka.toFixed(2)} zł, a chcesz pożyczyć ${amount} zł. Czy na pewno kontynuować i wejść na ujemny stan kasy?`);
+            const proceed = confirm(`Uwaga: W kasetce jest tylko ${currentKasetka.toFixed(2)} zł, a chcesz pożyczyć ${amount} zł. Czy na pewno wejść na ujemny stan kasy?`);
             if (!proceed) return;
         }
 
-        // Odejmij z kasetki
+        // Odejmij z kasetki (wydanie gotówki)
         data.kasetka = (currentKasetka - amountNum).toFixed(2);
 
         const code = `P-${101 + loans.length}`;
@@ -397,7 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
             interest,
             odKiedy: '0d TEMU',
             date: new Date().toISOString(),
-            splacone: false
+            splacone: false,
+            prolongations: 0
         };
 
         loans.push(newLoan);
@@ -409,32 +517,65 @@ document.addEventListener('DOMContentLoaded', () => {
         showReceipt(newLoan);
     });
 
-    // 2. GENEROWANIE PARAGONU (TIMES NEW ROMAN)
+    // 2. MODUŁ PROLONGATY (+14 DNI)
+    window.openProlongModal = function(index) {
+        const loan = currentData.loans[index];
+        prolongLoanIndex.value = index;
+        prolongClientInfo.innerHTML = `
+            KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
+            Przedłużenie terminu spłaty o kolejne <b>14 DNI</b>.
+        `;
+        prolongFeeInput.value = '20.00';
+        modalProlong.style.display = 'flex';
+    };
+
+    prolongForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+        const index = parseInt(prolongLoanIndex.value);
+        const fee = parseFloat(prolongFeeInput.value || 0);
+
+        const loan = data.loans[index];
+        loan.date = new Date().toISOString(); // Reset licznika 14 dni
+        loan.prolongations = (loan.prolongations || 0) + 1;
+
+        if (fee > 0) {
+            data.kasetka = (parseFloat(data.kasetka || 0) + fee).toFixed(2);
+            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + fee).toFixed(2);
+            data.lastMove = `Prolongata: ${loan.name} (+${fee.toFixed(2)} zł zysku)`;
+        } else {
+            data.lastMove = `Prolongata: ${loan.name} (+14 dni)`;
+        }
+
+        saveCloudData(user, data);
+        modalProlong.style.display = 'none';
+    });
+
+    // 3. GENEROWANIE PARAGONU (TIMES NEW ROMAN)
     function showReceipt(loan) {
+        const details = calculateLoanDetails(loan);
         const zwrotDate = new Date(loan.date || new Date());
         zwrotDate.setDate(zwrotDate.getDate() + 14);
-
-        const total = parseFloat(loan.amount || 0);
-        const paid = parseFloat(loan.paidAmount || 0);
-        const remaining = (total - paid).toFixed(2);
 
         receiptContent.innerHTML = `
             <div><b>KOD UMOWY:</b> ${loan.code}</div>
             <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
             <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
             <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
-                <div>KWOTA POŻYCZKI: <b>${total.toFixed(2)} PLN</b></div>
-                <div>WPŁACONO DOTYCHCZAS: <b>${paid.toFixed(2)} PLN</b></div>
-                <div>POZOSTAŁO DO SPŁATY: <b>${remaining} PLN</b></div>
-                <div>ODSETKI PO 14 DNI: <b>${loan.interest}%</b></div>
-                <div>TERMIN ODSETKOWY: <b>${zwrotDate.toLocaleDateString()}</b></div>
+                <div>KWOTA GŁÓWNA: <b>${details.principal.toFixed(2)} PLN</b></div>
+                <div>WPŁACONO DOTYCHCZAS: <b>${details.paid.toFixed(2)} PLN</b></div>
+                <div>NALICZONE ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
+                <div>POZOSTAŁO DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
+                <div>STAWKA ODSETEK (>14 DNI): <b>${loan.interest}%</b></div>
+                <div>TERMIN ZWROTU: <b>${zwrotDate.toLocaleDateString()}</b></div>
             </div>
             <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
         `;
 
         qrcodeDiv.innerHTML = '';
         new QRCode(qrcodeDiv, {
-            text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${loan.amount}|${loan.interest}`,
+            text: `BMCREDO|${loan.code}|${loan.fullName || loan.name}|${details.principal}|${loan.interest}`,
             width: 110,
             height: 110
         });
@@ -442,26 +583,24 @@ document.addEventListener('DOMContentLoaded', () => {
         modalReceipt.style.display = 'flex';
     }
 
-    // Ponowny wydruk paragonu z karty
     window.reprintReceipt = function(index) {
         const loan = currentData.loans[index];
         showReceipt(loan);
     };
 
-    // 3. WPŁATA DŁUŻNIKA
+    // 4. WPŁATA DŁUŻNIKA (ROZBICIE NA KAPITAŁ I ZYSK Z ODSETEK)
     window.openPaymentModal = function(index) {
         const loan = currentData.loans[index];
         paymentLoanIndex.value = index;
-        const total = parseFloat(loan.amount || 0);
-        const paid = parseFloat(loan.paidAmount || 0);
-        const remaining = (total - paid).toFixed(2);
+        const details = calculateLoanDetails(loan);
 
         paymentClientInfo.innerHTML = `
             KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO: <b>${remaining} zł</b>
+            KAPITAŁ: <b>${details.principal.toFixed(2)} zł</b> | ODSETKI: <b>${details.accruedInterest.toFixed(2)} zł</b><br>
+            ŁĄCZNIE DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} zł</b>
         `;
-        paymentAmountInput.value = remaining;
-        paymentAmountInput.max = remaining;
+        paymentAmountInput.value = details.remainingToPay.toFixed(2);
+        paymentAmountInput.max = details.remainingToPay.toFixed(2);
         modalPayment.style.display = 'flex';
     };
 
@@ -478,27 +617,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const loan = data.loans[index];
-        const currentPaid = parseFloat(loan.paidAmount || 0);
-        const total = parseFloat(loan.amount || 0);
+        const details = calculateLoanDetails(loan);
 
-        const newPaid = currentPaid + payVal;
+        // Jeśli są naliczone odsetki, wpłata najpierw pokrywa odsetki (jako czysty zysk)
+        if (details.accruedInterest > 0) {
+            const profitEarned = Math.min(payVal, details.accruedInterest);
+            data.earnedProfit = (parseFloat(data.earnedProfit || 0) + profitEarned).toFixed(2);
+        }
+
+        const newPaid = details.paid + payVal;
         loan.paidAmount = newPaid.toFixed(2);
 
         // Zwiększ stan kasetki
         data.kasetka = (parseFloat(data.kasetka || 0) + payVal).toFixed(2);
 
-        if (newPaid >= total) {
+        if (newPaid >= details.totalToRepay) {
             loan.splacone = true;
-            data.lastMove = `Spłacono: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
+            data.lastMove = `Spłacono w całości: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
         } else {
-            data.lastMove = `Wpłata: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
+            data.lastMove = `Wpłata raty: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
         }
 
         saveCloudData(user, data);
         modalPayment.style.display = 'none';
     });
 
-    // 4. MODUŁ CELE: WPŁATA, WYPŁATA I USUWANIE ZE ZWROTEM DO KASETKI
+    // 5. TRANSFER SAMEGO ZYSKU Z ODSETEK NA CEL
+    btnTransferProfit.addEventListener('click', () => {
+        const profit = parseFloat(currentData.earnedProfit || 0);
+        if (profit <= 0) {
+            alert('Brak wygenerowanego zysku z odsetek do przelania!');
+            return;
+        }
+
+        const goals = currentData.goals || [];
+        if (goals.length === 0) {
+            alert('Najpierw utwórz cel w sekcji "CELE", aby móc przelać tam zysk!');
+            return;
+        }
+
+        const goalName = goals[0].name;
+        if (!confirm(`Czy przelać cały czysty zysk (+${profit.toFixed(2)} zł) do celu: "${goalName}"?`)) return;
+
+        const user = sessionStorage.getItem('bmcredo_logged_user');
+        const data = currentData;
+
+        data.kasetka = (parseFloat(data.kasetka || 0) - profit).toFixed(2);
+        data.goals[0].current = (parseFloat(data.goals[0].current || 0) + profit).toFixed(2);
+        data.earnedProfit = 0;
+        data.lastMove = `Przelano zysk (+${profit.toFixed(2)} zł) do [${goalName}]`;
+
+        saveCloudData(user, data);
+    });
+
+    // 6. MODUŁ CELE: WPŁATA, WYPŁATA, USUWANIE
     tileGoals.addEventListener('click', () => {
         modalGoals.style.display = 'flex';
         renderGoalsList();
@@ -557,7 +729,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Odejmij z kasetki i dodaj do celu
         data.kasetka = (kasetkaStan - depAmount).toFixed(2);
         data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
         data.lastMove = `Do celu [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
@@ -576,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const inputVal = prompt(`Ile chcesz przelać z celu "${goal.name}" z powrotem do kasetki? (Maksymalnie: ${currentSaved.toFixed(2)} zł)`, currentSaved.toFixed(2));
+        const inputVal = prompt(`Ile przelać z celu "${goal.name}" z powrotem do kasetki? (Max: ${currentSaved.toFixed(2)} zł)`, currentSaved.toFixed(2));
         if (inputVal === null) return;
 
         const withdrawAmount = parseFloat(inputVal);
@@ -590,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
         data.kasetka = (parseFloat(data.kasetka || 0) + withdrawAmount).toFixed(2);
-        data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł do kasetki`;
+        data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł`;
 
         saveCloudData(user, data);
         renderGoalsList();
@@ -600,9 +771,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const goal = currentData.goals[goalIdx];
         const savedAmount = parseFloat(goal.current || 0);
 
-        let confirmMsg = `Czy na pewno chcesz usunąć cel: "${goal.name}"?`;
+        let confirmMsg = `Czy usunąć cel: "${goal.name}"?`;
         if (savedAmount > 0) {
-            confirmMsg += `\n\nŚrodki zgromadzone w celu (${savedAmount.toFixed(2)} zł) zostaną automatycznie zwrócone do kasetki!`;
+            confirmMsg += `\n\nŚrodki (${savedAmount.toFixed(2)} zł) zostaną zwrócone do kasetki!`;
         }
 
         if (!confirm(confirmMsg)) return;
@@ -620,14 +791,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGoalsList();
     };
 
-    // 5. USUWANIE POŻYCZKI ZE ZWROTEM DO KASETKI
+    // 7. USUWANIE POŻYCZKI ZE ZWROTEM
     window.deleteLoan = function(index) {
         const loan = currentData.loans[index];
         const totalLoan = parseFloat(loan.amount || 0);
         const totalPaid = parseFloat(loan.paidAmount || 0);
         const netAdjustment = totalLoan - totalPaid;
 
-        let confirmMsg = `Czy na pewno chcesz USUNĄĆ pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`;
+        let confirmMsg = `Czy usunąć pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`;
         if (netAdjustment !== 0) {
             confirmMsg += `\n\nKorekta kasetki: Stan gotówki zostanie zaktualizowany o ${netAdjustment > 0 ? '+' : ''}${netAdjustment.toFixed(2)} zł.`;
         }
@@ -644,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveCloudData(user, data);
     };
 
-    // 6. KASETKA
+    // 8. KASETKA
     tileKasetka.addEventListener('click', () => {
         kasetkaInputValue.value = parseFloat(currentData.kasetka || 0).toFixed(2);
         modalKasetka.style.display = 'flex';
@@ -666,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalKasetka.style.display = 'none';
     });
 
-    // 7. KAMERA QR
+    // 9. KAMERA QR
     let html5QrCode = null;
     tileScanner.addEventListener('click', () => {
         modalScanner.style.display = 'flex';
@@ -702,10 +873,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     fullName: decodedText,
                     amount: defaultAmount.toFixed(2),
                     paidAmount: '0.00',
-                    interest: '5',
+                    interest: '10',
                     odKiedy: '0d TEMU',
                     date: new Date().toISOString(),
-                    splacone: false
+                    splacone: false,
+                    prolongations: 0
                 });
                 data.loans = loans;
                 data.lastMove = `Skan QR: -${defaultAmount.toFixed(2)} zł`;
@@ -718,7 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 8. RAPORT DOBOWY A4 TIMES NEW ROMAN
+    // 10. RAPORT DOBOWY A4
     tileReport.addEventListener('click', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
@@ -728,25 +900,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const activeLoans = loans.filter(l => !l.splacone);
         const splaconeLoans = loans.filter(l => l.splacone);
 
-        const totalObieg = activeLoans.reduce((acc, l) => acc + (parseFloat(l.amount || 0) - parseFloat(l.paidAmount || 0)), 0);
+        const totalObieg = activeLoans.reduce((acc, l) => {
+            const details = calculateLoanDetails(l);
+            return acc + details.remainingToPay;
+        }, 0);
         const totalWplacone = loans.reduce((acc, l) => acc + parseFloat(l.paidAmount || 0), 0);
         const totalWCelach = goals.reduce((acc, g) => acc + parseFloat(g.current || 0), 0);
 
         let tableRows = '';
         loans.forEach((l, i) => {
-            const total = parseFloat(l.amount || 0).toFixed(2);
-            const paid = parseFloat(l.paidAmount || 0).toFixed(2);
-            const remaining = (total - paid).toFixed(2);
-            const status = l.splacone ? 'SPŁACONA' : 'AKTYWNA';
+            const details = calculateLoanDetails(l);
+            const status = l.splacone ? 'SPŁACONA' : (details.isOverdue ? 'ODSETKI' : 'AKTYWNA');
 
             tableRows += `
                 <tr>
                     <td style="border:1px solid #000; padding:5px; text-align:center;">${i+1}</td>
                     <td style="border:1px solid #000; padding:5px; text-align:center;"><b>${l.code}</b></td>
                     <td style="border:1px solid #000; padding:5px;">${l.fullName || l.name}</td>
-                    <td style="border:1px solid #000; padding:5px; text-align:right;">${total} zł</td>
-                    <td style="border:1px solid #000; padding:5px; text-align:right;">${paid} zł</td>
-                    <td style="border:1px solid #000; padding:5px; text-align:right;">${remaining} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${details.principal.toFixed(2)} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">+${details.accruedInterest.toFixed(2)} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${details.paid.toFixed(2)} zł</td>
+                    <td style="border:1px solid #000; padding:5px; text-align:right;">${details.remainingToPay.toFixed(2)} zł</td>
                     <td style="border:1px solid #000; padding:5px; text-align:center;">${status}</td>
                 </tr>
             `;
@@ -775,11 +949,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td style="text-align:right;"><b>${parseFloat(data.kasetka || 0).toFixed(2)} PLN</b></td>
                     </tr>
                     <tr>
+                        <td><b>CZYSTY ZYSK Z ODSETEK / PROLONGAT:</b></td>
+                        <td style="text-align:right; color:#2e7d32;"><b>+${parseFloat(data.earnedProfit || 0).toFixed(2)} PLN</b></td>
+                    </tr>
+                    <tr>
                         <td><b>ŚRODKI ZGROMADZONE W CELACH:</b></td>
                         <td style="text-align:right;"><b>${totalWCelach.toFixed(2)} PLN</b></td>
                     </tr>
                     <tr>
-                        <td><b>SUMA POŻYCZEK W OBIEGU (DO ZWROTU):</b></td>
+                        <td><b>SUMA NALEŻNOŚCI W OBIEGU (Z ODSETKAMI):</b></td>
                         <td style="text-align:right;"><b>${totalObieg.toFixed(2)} PLN</b></td>
                     </tr>
                     <tr>
@@ -795,20 +973,21 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             <h3 style="font-size:12pt; margin-bottom:6px;">SZCZEGÓŁOWY WYKAZ POZYCJI:</h3>
-            <table style="width:100%; border-collapse:collapse; font-size:10pt;">
+            <table style="width:100%; border-collapse:collapse; font-size:9pt;">
                 <thead>
                     <tr style="background:#f0f0f0;">
-                        <th style="border:1px solid #000; padding:5px;">LP</th>
-                        <th style="border:1px solid #000; padding:5px;">KOD</th>
-                        <th style="border:1px solid #000; padding:5px;">KLIENT / DŁUŻNIK</th>
-                        <th style="border:1px solid #000; padding:5px;">KWOTA</th>
-                        <th style="border:1px solid #000; padding:5px;">WPŁACONO</th>
-                        <th style="border:1px solid #000; padding:5px;">SALDO</th>
-                        <th style="border:1px solid #000; padding:5px;">STATUS</th>
+                        <th style="border:1px solid #000; padding:4px;">LP</th>
+                        <th style="border:1px solid #000; padding:4px;">KOD</th>
+                        <th style="border:1px solid #000; padding:4px;">KLIENT</th>
+                        <th style="border:1px solid #000; padding:4px;">KAPITAŁ</th>
+                        <th style="border:1px solid #000; padding:4px;">ODSETKI</th>
+                        <th style="border:1px solid #000; padding:4px;">WPŁACONO</th>
+                        <th style="border:1px solid #000; padding:4px;">SALDO</th>
+                        <th style="border:1px solid #000; padding:4px;">STATUS</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${tableRows || '<tr><td colspan="7" style="text-align:center; padding:10px;">Brak pozycji do wyświetlenia.</td></tr>'}
+                    ${tableRows || '<tr><td colspan="8" style="text-align:center; padding:10px;">Brak pozycji do wyświetlenia.</td></tr>'}
                 </tbody>
             </table>
 
@@ -821,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modalReport.style.display = 'flex';
     });
 
-    // 9. TERMINAL
+    // 11. TERMINAL
     function handleTerminalAction() {
         const val = terminalInput.value.trim();
         if (!val) return;
@@ -843,10 +1022,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 fullName: `Wpis terminala: ${val}`,
                 amount: defaultAmt.toFixed(2),
                 paidAmount: '0.00',
-                interest: '5',
+                interest: '10',
                 odKiedy: '0d TEMU',
                 date: new Date().toISOString(),
-                splacone: false
+                splacone: false,
+                prolongations: 0
             });
             data.loans = loans;
             data.lastMove = `Terminal: -${defaultAmt.toFixed(2)} zł (${val})`;

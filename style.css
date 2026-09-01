@@ -72,7 +72,7 @@ body {
 
 .header-box {
     text-align: center;
-    padding: 12px 6px;
+    padding: 10px 6px;
 }
 
 .box-label-title {
@@ -89,7 +89,7 @@ body {
 
 .tile {
     border: 3px solid var(--border-dark);
-    height: 88px;
+    height: 80px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -107,7 +107,7 @@ body {
 
 .tile-full-width {
     grid-column: span 2;
-    height: 60px;
+    height: 52px;
     flex-direction: row;
     gap: 10px;
 }
@@ -134,22 +134,45 @@ body {
     margin-bottom: 2px;
 }
 
+/* ZYSK Z ODSETEK */
+.profit-box {
+    background-color: var(--border-inner);
+    padding: 6px 8px;
+    text-align: center;
+}
+
+.profit-val {
+    color: var(--accent-green);
+    font-size: 0.95rem;
+    margin: 2px 0 4px 0;
+}
+
+.profit-transfer-btn {
+    background: none;
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+    font-size: 0.55rem;
+    padding: 2px 6px;
+    cursor: pointer;
+    width: 100%;
+}
+
 .last-move-box {
     margin-top: auto;
     background-color: var(--border-inner);
-    padding: 10px;
+    padding: 8px;
 }
 
 .sub-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--text-sand);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .last-move-val {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--accent-green);
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     word-break: break-all;
 }
 
@@ -157,7 +180,7 @@ body {
     font-size: 0.6rem;
     color: var(--text-dim);
     border-top: 1px dashed var(--border-dark);
-    padding-top: 6px;
+    padding-top: 4px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -214,15 +237,15 @@ body {
     gap: 10px;
 }
 
-/* KARTA POŻYCZKI BEZ PRZYCISKU STATUS */
+/* KARTA POŻYCZKI */
 .retro-loan-card {
     background-color: var(--tile-olive);
     border: 3px solid var(--border-dark);
     padding: 12px 14px;
-    max-width: 440px;
+    max-width: 460px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .card-top-row {
@@ -236,18 +259,36 @@ body {
     color: var(--text-white);
 }
 
+.rating-badge {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 2px;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+.rating-a { background: #68ad48; color: #12170f; }
+.rating-b { background: #d89f53; color: #12170f; }
+.rating-c { background: #c95144; color: #fff; }
+
 .client-code {
     font-size: 0.7rem;
     color: var(--text-sand);
 }
 
 .card-mid-row {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-white);
     background: var(--border-inner);
-    padding: 5px 8px;
+    padding: 6px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.interest-warn {
+    color: var(--accent-red);
+    font-weight: bold;
 }
 
 .card-bottom-row {
@@ -263,20 +304,21 @@ body {
 
 .card-actions {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     margin-top: 4px;
 }
 
 .action-btn {
     background: none;
     border: 1px solid var(--border-dark);
-    padding: 4px 8px;
-    font-size: 0.65rem;
+    padding: 3px 6px;
+    font-size: 0.6rem;
     cursor: pointer;
 }
 
-.action-pay    { color: var(--accent-green); background: var(--border-inner); font-weight: bold; }
-.action-delete { color: var(--accent-red); }
+.action-pay     { color: var(--accent-green); background: var(--border-inner); font-weight: bold; }
+.action-prolong { color: var(--accent-orange); background: var(--border-inner); }
+.action-delete  { color: var(--accent-red); }
 
 .status-tag {
     font-size: 0.85rem;
@@ -343,7 +385,7 @@ body {
     color: var(--text-white);
 }
 
-/* MODALE OGÓLNE */
+/* MODALE */
 .auth-container, .modal-backdrop {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -357,7 +399,7 @@ body {
     border: 4px solid var(--border-dark);
     padding: 20px;
     width: 90%;
-    max-width: 390px;
+    max-width: 400px;
     box-shadow: 6px 6px 0px var(--black);
 }
 
@@ -417,6 +459,15 @@ body {
     margin-bottom: 8px;
 }
 
+.rating-warning-box {
+    background: #4a1c1a;
+    border: 1px solid var(--accent-red);
+    color: #ffb4a2;
+    padding: 6px;
+    font-size: 0.65rem;
+    margin-bottom: 10px;
+}
+
 .m-label-sub {
     font-size: 0.65rem;
     color: var(--text-dim);
@@ -438,11 +489,8 @@ body {
     cursor: pointer;
 }
 
-/* MODUŁ CELE */
-.goals-window {
-    max-width: 500px;
-}
-
+/* CELE */
+.goals-window { max-width: 500px; }
 .goals-list-box {
     max-height: 220px;
     overflow-y: auto;
@@ -495,7 +543,7 @@ body {
     color: var(--accent-orange);
 }
 
-/* === PARAGON W FORMACIE DRUKARKI PARAGONÓW (TIMES NEW ROMAN) === */
+/* PARAGON (TIMES NEW ROMAN) */
 .receipt-wrapper {
     max-width: 320px;
     background: #ffffff;
@@ -527,9 +575,7 @@ body {
     text-transform: uppercase;
 }
 
-.receipt-header-tnr p {
-    font-size: 11px;
-}
+.receipt-header-tnr p { font-size: 11px; }
 
 .receipt-divider-dashes {
     text-align: center;
@@ -538,10 +584,7 @@ body {
     margin: 4px 0;
 }
 
-.receipt-body-tnr {
-    font-size: 12px;
-    margin: 4px 0;
-}
+.receipt-body-tnr { font-size: 12px; margin: 4px 0; }
 
 .receipt-qr-center {
     display: flex;
@@ -564,11 +607,8 @@ body {
     padding-top: 4px;
 }
 
-/* === RAPORT DOBOWY A4 (TIMES NEW ROMAN) === */
-.report-window {
-    max-width: 700px;
-}
-
+/* RAPORT A4 (TIMES NEW ROMAN) */
+.report-window { max-width: 720px; }
 .report-paper-tnr {
     background: #ffffff;
     color: #000000;
@@ -587,9 +627,7 @@ body {
 
 /* DRUKOWANIE */
 @media print {
-    body * {
-        visibility: hidden !important;
-    }
+    body * { visibility: hidden !important; }
     .receipt-thermal-paper, .receipt-thermal-paper *,
     .report-paper-tnr, .report-paper-tnr * {
         visibility: visible !important;
@@ -612,7 +650,5 @@ body {
         padding: 10mm;
         box-shadow: none;
     }
-    .no-print {
-        display: none !important;
-    }
+    .no-print { display: none !important; }
 }
