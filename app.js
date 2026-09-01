@@ -302,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${statusHtml}
                         <div class="card-actions">
                             <button onclick="window.openPaymentModal(${originalIndex})" class="action-btn action-pay">[WPŁATA]</button>
+                            <button onclick="window.reprintReceipt(${originalIndex})" class="action-btn" style="color:#d89f53; background:var(--border-inner);">[PARAGON]</button>
                             <button onclick="window.deleteLoan(${originalIndex})" class="action-btn action-delete">[USUŃ]</button>
                         </div>
                     </div>
@@ -351,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 1. + POŻYCZKA (Z MNIEJSZENIEM STANU KASETKI)
+    // 1. + POŻYCZKA
     tileAddLoan.addEventListener('click', () => {
         loanPerson.value = '';
         loanAmount.value = '';
@@ -381,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!proceed) return;
         }
 
-        // Odejmij kwotę z kasetki (wydanie gotówki klientowi)
+        // Odejmij z kasetki
         data.kasetka = (currentKasetka - amountNum).toFixed(2);
 
         const code = `P-${101 + loans.length}`;
@@ -408,18 +409,23 @@ document.addEventListener('DOMContentLoaded', () => {
         showReceipt(newLoan);
     });
 
-    // 2. GENEROWANIE PARAGONU TIMES NEW ROMAN
+    // 2. GENEROWANIE PARAGONU (TIMES NEW ROMAN)
     function showReceipt(loan) {
         const zwrotDate = new Date(loan.date || new Date());
         zwrotDate.setDate(zwrotDate.getDate() + 14);
 
+        const total = parseFloat(loan.amount || 0);
+        const paid = parseFloat(loan.paidAmount || 0);
+        const remaining = (total - paid).toFixed(2);
+
         receiptContent.innerHTML = `
             <div><b>KOD UMOWY:</b> ${loan.code}</div>
-            <div><b>DATA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
+            <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
             <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
-            <div style="margin: 4px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 4px 0;">
-                <div>KWOTA POŻYCZKI: <b>${parseFloat(loan.amount).toFixed(2)} PLN</b></div>
-                <div>WPŁACONO: <b>${parseFloat(loan.paidAmount || 0).toFixed(2)} PLN</b></div>
+            <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
+                <div>KWOTA POŻYCZKI: <b>${total.toFixed(2)} PLN</b></div>
+                <div>WPŁACONO DOTYCHCZAS: <b>${paid.toFixed(2)} PLN</b></div>
+                <div>POZOSTAŁO DO SPŁATY: <b>${remaining} PLN</b></div>
                 <div>ODSETKI PO 14 DNI: <b>${loan.interest}%</b></div>
                 <div>TERMIN ODSETKOWY: <b>${zwrotDate.toLocaleDateString()}</b></div>
             </div>
@@ -436,7 +442,13 @@ document.addEventListener('DOMContentLoaded', () => {
         modalReceipt.style.display = 'flex';
     }
 
-    // 3. WPŁATA DŁUŻNIKA (DODAWANIE DO KASETKI)
+    // Ponowny wydruk paragonu z karty
+    window.reprintReceipt = function(index) {
+        const loan = currentData.loans[index];
+        showReceipt(loan);
+    };
+
+    // 3. WPŁATA DŁUŻNIKA
     window.openPaymentModal = function(index) {
         const loan = currentData.loans[index];
         paymentLoanIndex.value = index;
@@ -446,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         paymentClientInfo.innerHTML = `
             KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO DO SPŁATY: <b>${remaining} zł</b>
+            POŻYCZONO: <b>${total.toFixed(2)} zł</b> | POZOSTAŁO: <b>${remaining} zł</b>
         `;
         paymentAmountInput.value = remaining;
         paymentAmountInput.max = remaining;
@@ -472,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPaid = currentPaid + payVal;
         loan.paidAmount = newPaid.toFixed(2);
 
-        // Zwiększ stan kasetki o przyjętą spłatę
+        // Zwiększ stan kasetki
         data.kasetka = (parseFloat(data.kasetka || 0) + payVal).toFixed(2);
 
         if (newPaid >= total) {
@@ -555,7 +567,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGoalsList();
     });
 
-    // Wypłata środków z celu z powrotem do kasetki
     window.withdrawGoalToKasetka = function(goalIdx) {
         const goal = currentData.goals[goalIdx];
         const currentSaved = parseFloat(goal.current || 0);
@@ -577,7 +588,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
 
-        // Odejmij z celu, dodaj do kasetki
         data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
         data.kasetka = (parseFloat(data.kasetka || 0) + withdrawAmount).toFixed(2);
         data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł do kasetki`;
@@ -586,7 +596,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGoalsList();
     };
 
-    // Usunięcie celu ze ZWROTEM pieniędzy do kasetki
     window.deleteGoal = function(goalIdx) {
         const goal = currentData.goals[goalIdx];
         const savedAmount = parseFloat(goal.current || 0);
@@ -601,7 +610,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
 
-        // Zwróć kwotę do kasetki
         if (savedAmount > 0) {
             data.kasetka = (parseFloat(data.kasetka || 0) + savedAmount).toFixed(2);
         }
@@ -612,16 +620,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGoalsList();
     };
 
-    // 5. USUWANIE POŻYCZKI ZE ZWROTEM DO KASETKI (KOREKTA BŁĘDNEGO WPISU)
+    // 5. USUWANIE POŻYCZKI ZE ZWROTEM DO KASETKI
     window.deleteLoan = function(index) {
         const loan = currentData.loans[index];
         const totalLoan = parseFloat(loan.amount || 0);
         const totalPaid = parseFloat(loan.paidAmount || 0);
-        const netAdjustment = totalLoan - totalPaid; // Różnica do wyrównania kasy
+        const netAdjustment = totalLoan - totalPaid;
 
         let confirmMsg = `Czy na pewno chcesz USUNĄĆ pożyczkę [${loan.code}] dla: ${loan.fullName || loan.name}?`;
         if (netAdjustment !== 0) {
-            confirmMsg += `\n\nKorekta kasetki: Stan gotówki zostanie zaktualizowany o ${netAdjustment > 0 ? '+' : ''}${netAdjustment.toFixed(2)} zł (zwrot wypłaconej pożyczki pomniejszony o ewentualne wpłaty).`;
+            confirmMsg += `\n\nKorekta kasetki: Stan gotówki zostanie zaktualizowany o ${netAdjustment > 0 ? '+' : ''}${netAdjustment.toFixed(2)} zł.`;
         }
 
         if (!confirm(confirmMsg)) return;
@@ -629,15 +637,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
 
-        // Zwróć gotówkę do kasetki
         data.kasetka = (parseFloat(data.kasetka || 0) + netAdjustment).toFixed(2);
 
         const removed = data.loans.splice(index, 1);
-        data.lastMove = `Usunięto pożyczkę: ${removed[0].name} (Korekta kasy: +${netAdjustment.toFixed(2)} zł)`;
+        data.lastMove = `Usunięto pożyczkę: ${removed[0].name} (Korekta: +${netAdjustment.toFixed(2)} zł)`;
         saveCloudData(user, data);
     };
 
-    // 6. KASETKA - RĘCZNA EDYCJA
+    // 6. KASETKA
     tileKasetka.addEventListener('click', () => {
         kasetkaInputValue.value = parseFloat(currentData.kasetka || 0).toFixed(2);
         modalKasetka.style.display = 'flex';
@@ -676,7 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = currentData;
                 const loans = data.loans || [];
 
-                // Jeśli zeskanowano kod w formacie BMCREDO|P-101|...
                 if (decodedText.startsWith('BMCREDO|')) {
                     const parts = decodedText.split('|');
                     const code = parts[1];
@@ -687,7 +693,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // Domyślne dodanie ze skanu QR
                 const defaultAmount = 50.00;
                 data.kasetka = (parseFloat(data.kasetka || 0) - defaultAmount).toFixed(2);
 
