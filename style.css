@@ -47,8 +47,8 @@ body {
 }
 
 .pos-left-panel {
-    width: 300px;
-    min-width: 300px;
+    width: 310px;
+    min-width: 310px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -72,7 +72,7 @@ body {
 
 .header-box {
     text-align: center;
-    padding: 10px 6px;
+    padding: 8px 6px;
 }
 
 .box-label-title {
@@ -89,7 +89,7 @@ body {
 
 .tile {
     border: 3px solid var(--border-dark);
-    height: 80px;
+    height: 72px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -105,26 +105,19 @@ body {
     transform: translate(1px, 1px);
 }
 
-.tile-full-width {
-    grid-column: span 2;
-    height: 52px;
-    flex-direction: row;
-    gap: 10px;
-}
-
 .tile-olive  { background-color: var(--tile-olive); }
 .tile-sand   { background-color: var(--tile-sand); }
 .tile-teal   { background-color: var(--tile-teal); }
 .tile-purple { background-color: var(--tile-purple); }
 
 .tile-val {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     color: var(--text-white);
     margin-bottom: 2px;
 }
 
 .tile-desc {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--text-sand);
     letter-spacing: 0.5px;
 }
@@ -134,7 +127,7 @@ body {
     margin-bottom: 2px;
 }
 
-/* ZYSK Z ODSETEK */
+/* ZYSK */
 .profit-box {
     background-color: var(--border-inner);
     padding: 6px 8px;
@@ -152,7 +145,7 @@ body {
     border: 1px solid var(--accent-green);
     color: var(--accent-green);
     font-size: 0.55rem;
-    padding: 2px 6px;
+    padding: 3px 6px;
     cursor: pointer;
     width: 100%;
 }
@@ -397,7 +390,7 @@ body {
 .auth-box, .modal-window {
     background-color: var(--bg-main);
     border: 4px solid var(--border-dark);
-    padding: 20px;
+    padding: 18px;
     width: 90%;
     max-width: 400px;
     box-shadow: 6px 6px 0px var(--black);
@@ -411,7 +404,7 @@ body {
 }
 
 .input-group, .m-input-group {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .input-group label, .m-input-group label {
@@ -487,6 +480,17 @@ body {
     padding: 6px;
     font-size: 0.65rem;
     cursor: pointer;
+}
+
+/* KALKULATOR */
+.calc-window { max-width: 420px; }
+.calc-results-box {
+    background: var(--border-inner);
+    border: 2px solid var(--border-dark);
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+    line-height: 1.6;
 }
 
 /* CELE */
@@ -607,8 +611,8 @@ body {
     padding-top: 4px;
 }
 
-/* RAPORT A4 (TIMES NEW ROMAN) */
-.report-window { max-width: 720px; }
+/* RAPORT A4 WIDOK PODGLĄDU */
+.report-window { max-width: 760px; }
 .report-paper-tnr {
     background: #ffffff;
     color: #000000;
@@ -625,11 +629,10 @@ body {
     font-family: "Times New Roman", Times, serif !important;
 }
 
-/* DRUKOWANIE */
+/* DRUK PARAGONÓW (THERMAL PRINTER) */
 @media print {
     body * { visibility: hidden !important; }
-    .receipt-thermal-paper, .receipt-thermal-paper *,
-    .report-paper-tnr, .report-paper-tnr * {
+    .receipt-thermal-paper, .receipt-thermal-paper * {
         visibility: visible !important;
     }
     .receipt-thermal-paper {
@@ -639,15 +642,6 @@ body {
         width: 75mm;
         margin: 0;
         padding: 4mm;
-        box-shadow: none;
-    }
-    .report-paper-tnr {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 10mm;
         box-shadow: none;
     }
     .no-print { display: none !important; }

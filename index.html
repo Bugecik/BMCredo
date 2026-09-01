@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=8">
+    <link rel="stylesheet" href="style.css?v=9">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -64,7 +64,7 @@
                 <!-- 3. CELE / SKARBONKA -->
                 <div class="tile tile-purple" id="tile-goals">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <circle cx="12" cy="12" r="6"></circle>
                             <circle cx="12" cy="12" r="2"></circle>
@@ -73,10 +73,23 @@
                     <div class="tile-desc">CELE</div>
                 </div>
 
-                <!-- 4. KAMERA QR -->
+                <!-- 4. KALKULATOR -->
+                <div class="tile tile-teal" id="tile-calculator">
+                    <div class="tile-icon-svg">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="16" y1="14" x2="16" y2="18"></line>
+                            <path d="M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M8 18h.01M12 18h.01"></path>
+                        </svg>
+                    </div>
+                    <div class="tile-desc">KALKULATOR</div>
+                </div>
+
+                <!-- 5. KAMERA QR -->
                 <div class="tile tile-teal" id="tile-scanner">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                             <circle cx="12" cy="13" r="4"></circle>
                         </svg>
@@ -84,10 +97,10 @@
                     <div class="tile-desc">KAMERA QR</div>
                 </div>
 
-                <!-- 5. RAPORT DOBOWY -->
-                <div class="tile tile-sand tile-full-width" id="tile-report">
+                <!-- 6. RAPORT DOBOWY -->
+                <div class="tile tile-sand" id="tile-report">
                     <div class="tile-icon-svg">
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -98,7 +111,7 @@
                 </div>
             </div>
 
-            <!-- ZYSK Z ODSETEK / INFO -->
+            <!-- ZYSK Z ODSETEK -->
             <div class="outer-box profit-box">
                 <div class="sub-label">CZYSTY ZYSK (ODSETKI):</div>
                 <div class="profit-val" id="total-profit-display">+0.00 zł</div>
@@ -173,7 +186,36 @@
         </div>
     </div>
 
-    <!-- 2. MODAL PROLONGATY (+14 DNI) -->
+    <!-- 2. MODAL KALKULATORA FINANSOWEGO -->
+    <div id="modal-calculator" class="modal-backdrop" style="display:none;">
+        <div class="modal-window calc-window">
+            <div class="modal-header">[ KALKULATOR ODSETEK POS ]</div>
+            <div class="m-input-group">
+                <label>KWOTA KAPITAŁU (ZŁ):</label>
+                <input type="number" step="10" id="calc-principal" placeholder="500" value="500">
+            </div>
+            <div class="m-input-group">
+                <label>STAWKA ODSETEK (%):</label>
+                <input type="number" step="1" id="calc-rate" placeholder="10" value="10">
+            </div>
+            <div class="m-input-group">
+                <label>DNI PRZETERMINOWANIA (POZA 14D):</label>
+                <input type="number" step="1" id="calc-days" placeholder="7" value="7">
+            </div>
+
+            <div class="calc-results-box">
+                <div>NALICZONE ODSETKI: <b id="calc-res-interest" style="color:var(--accent-green);">+50.00 zł</b></div>
+                <div>ŁĄCZNIE DO ZWROTU: <b id="calc-res-total" style="color:var(--accent-orange);">550.00 zł</b></div>
+            </div>
+
+            <div class="m-btn-group" style="margin-top: 12px;">
+                <button type="button" id="btn-use-in-loan" class="retro-btn">PRZEŚLIJ DO POŻYCZKI</button>
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MODAL PROLONGATY (+14 DNI) -->
     <div id="modal-prolong" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ PROLONGATA TERMINU +14 DNI ]</div>
@@ -192,7 +234,7 @@
         </div>
     </div>
 
-    <!-- 3. MODAL REJESTROWANIA WPŁATY -->
+    <!-- 4. MODAL REJESTROWANIA WPŁATY -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -211,7 +253,7 @@
         </div>
     </div>
 
-    <!-- 4. MODAL CELE / SKARBONKA -->
+    <!-- 5. MODAL CELE / SKARBONKA -->
     <div id="modal-goals" class="modal-backdrop" style="display:none;">
         <div class="modal-window goals-window">
             <div class="modal-header">[ CELE FINANSOWE / SKARBONKA ]</div>
@@ -241,7 +283,7 @@
         </div>
     </div>
 
-    <!-- 5. MODAL WPŁATY NA CEL Z KASETKI -->
+    <!-- 6. MODAL WPŁATY NA CEL Z KASETKI -->
     <div id="modal-deposit-goal" class="modal-backdrop" style="display:none; z-index:10000;">
         <div class="modal-window">
             <div class="modal-header">[ WPŁATA Z KASETKI NA CEL ]</div>
@@ -260,7 +302,7 @@
         </div>
     </div>
 
-    <!-- 6. MODAL PARAGONU (TIMES NEW ROMAN) -->
+    <!-- 7. MODAL PARAGONU (TIMES NEW ROMAN) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
         <div class="modal-window receipt-wrapper">
             <div id="receipt-printable" class="receipt-thermal-paper">
@@ -286,7 +328,7 @@
         </div>
     </div>
 
-    <!-- 7. MODAL KASETKI -->
+    <!-- 8. MODAL KASETKI -->
     <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ STAN KASETKI ]</div>
@@ -309,7 +351,7 @@
         </div>
     </div>
 
-    <!-- 8. MODAL SKANERA QR -->
+    <!-- 9. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -318,18 +360,21 @@
         </div>
     </div>
 
-    <!-- 9. MODAL RAPORTU DOBOWEGO A4 (TIMES NEW ROMAN) -->
+    <!-- 10. MODAL RAPORTU DOBOWEGO A4 -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
             <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
             <div id="report-content" class="report-paper-tnr"></div>
             <div class="m-btn-group no-print" style="margin-top:14px;">
-                <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ A4</button>
+                <button type="button" id="btn-print-report" class="retro-btn" style="background:#426b68;">DRUKUJ A4</button>
                 <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=8"></script>
+    <!-- UKRYTY I FRAME DO DRUKU A4 BEZ ZNIEKSZTAŁCEŃ -->
+    <iframe id="print-frame" style="display:none;"></iframe>
+
+    <script src="app.js?v=9"></script>
 </body>
 </html>
