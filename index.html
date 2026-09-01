@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=3">
-    <!-- QR Code & Scanner Scripts -->
+    <link rel="stylesheet" href="style.css?v=5">
+    
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Skaner kodów i generator QR -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -44,19 +49,16 @@
             </div>
 
             <div class="tiles-grid">
-                <!-- + POŻYCZKA -->
                 <div class="tile tile-olive" id="tile-add-loan">
                     <div class="tile-val" id="count-active">0</div>
                     <div class="tile-desc">+ POŻYCZKA</div>
                 </div>
 
-                <!-- KASETKA -->
                 <div class="tile tile-sand" id="tile-kasetka">
                     <div class="tile-val" id="total-kasetka">1000 zł</div>
                     <div class="tile-desc">KASETKA</div>
                 </div>
 
-                <!-- KAMERA QR -->
                 <div class="tile tile-teal" id="tile-scanner">
                     <div class="tile-icon-svg">
                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,7 +69,6 @@
                     <div class="tile-desc">KAMERA QR</div>
                 </div>
 
-                <!-- RAPORT A4 -->
                 <div class="tile tile-sand" id="tile-report">
                     <div class="tile-icon-svg">
                         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- OSTATNI RUCH & OPERATOR -->
             <div class="outer-box last-move-box">
                 <div class="sub-label">OSTATNI RUCH:</div>
                 <div class="last-move-val" id="last-move-text">+ Brak</div>
@@ -94,25 +94,19 @@
 
         <!-- PRAWA KOLUMNA -->
         <main class="pos-right-panel">
-            
-            <!-- GÓRNE ZAKŁADKI -->
             <div class="outer-box tabs-outer">
                 <div class="tabs-container">
-                    <button class="tab-btn active" data-tab="do-splaty">DO SPŁATY</button>
+                    <button class="tab-btn" data-tab="do-splaty">DO SPŁATY</button>
                     <button class="tab-btn" data-tab="odsetki">ODSETKI (>14 DNI)</button>
                     <button class="tab-btn" data-tab="wszyscy">WSZYSCY</button>
-                    <button class="tab-btn" data-tab="splacone">SPŁACONE</button>
+                    <button class="tab-btn active" data-tab="splacone">SPŁACONE</button>
                 </div>
             </div>
 
-            <!-- LISTA POZYCJI -->
             <div class="outer-box main-list-box">
-                <div class="list-scroll-area" id="loans-list">
-                    <!-- Dynamiczne kafelki pożyczek -->
-                </div>
+                <div class="list-scroll-area" id="loans-list"></div>
             </div>
 
-            <!-- DOLNY PASEK TERMINALA -->
             <div class="outer-box terminal-outer">
                 <div class="terminal-flex">
                     <div class="terminal-input-group">
@@ -125,7 +119,6 @@
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
@@ -156,19 +149,40 @@
         </div>
     </div>
 
-    <!-- 2. MODAL PARAGONU Z KODEM QR -->
+    <!-- 2. MODAL REJESTROWANIA WPŁATY / CZĘŚCIOWEJ SPŁATY -->
+    <div id="modal-payment" class="modal-backdrop" style="display:none;">
+        <div class="modal-window">
+            <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
+            <div id="payment-client-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
+            <form id="payment-form">
+                <input type="hidden" id="payment-loan-index">
+                <div class="m-input-group">
+                    <label>KWOTA WPŁACANA TERAZ (ZŁ):</label>
+                    <input type="number" step="0.01" id="payment-amount-input" required placeholder="50.00">
+                </div>
+                <div class="m-btn-group">
+                    <button type="submit" class="retro-btn">ZATWIERDŹ WPŁATĘ</button>
+                    <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. MODAL PARAGONU Z KODEM QR (DO DRUKU) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
-        <div class="modal-window receipt-style">
-            <div class="receipt-header">*** PARAGON RETRO POS ***</div>
+        <div class="modal-window receipt-style printable-area" id="receipt-printable">
+            <div class="receipt-header">*** BMCREDO POS - DOWÓD POŻYCZKI ***</div>
             <div id="receipt-content" class="receipt-body"></div>
             <div id="qrcode" class="receipt-qr-wrap"></div>
-            <div class="m-btn-group">
-                <button type="button" class="retro-btn close-modal" style="width:100%;">ZAMKNIJ PARAGON</button>
+            <div class="receipt-footer-cut">- - - - - ODETNIJ TUTAJ - - - - -</div>
+            <div class="m-btn-group no-print" style="margin-top: 10px;">
+                <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ PARAGON</button>
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. MODAL KASETKI -->
+    <!-- 4. MODAL KASETKI -->
     <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ STAN KASETKI ]</div>
@@ -191,7 +205,7 @@
         </div>
     </div>
 
-    <!-- 4. MODAL SKANERA QR -->
+    <!-- 5. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -200,18 +214,18 @@
         </div>
     </div>
 
-    <!-- 5. MODAL RAPORTU DOBOWEGO A4 -->
+    <!-- 6. MODAL RAPORTU DOBOWEGO A4 (DO DRUKU) -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
-            <div class="modal-header">[ RAPORT DOBOWY A4 ]</div>
-            <div id="report-content" class="report-paper"></div>
-            <div class="m-btn-group" style="margin-top:14px;">
-                <button type="button" onclick="window.print()" class="retro-btn">DRUKUJ A4</button>
+            <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
+            <div id="report-content" class="report-paper printable-area"></div>
+            <div class="m-btn-group no-print" style="margin-top:14px;">
+                <button type="button" onclick="window.print()" class="retro-btn" style="background:#426b68;">DRUKUJ A4</button>
                 <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>

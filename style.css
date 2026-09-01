@@ -5,7 +5,6 @@
     margin: 0;
     padding: 0;
     font-family: 'Silkscreen', monospace;
-    text-shadow: none;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -36,7 +35,6 @@ body {
     align-items: center;
 }
 
-/* RAMKA CAŁEGO SYSTEMU */
 .pos-frame {
     width: 100vw;
     height: 100vh;
@@ -47,7 +45,6 @@ body {
     padding: 8px;
 }
 
-/* LEWY PANEL */
 .pos-left-panel {
     width: 290px;
     min-width: 290px;
@@ -57,7 +54,6 @@ body {
     height: 100%;
 }
 
-/* PRAWY PANEL */
 .pos-right-panel {
     flex: 1;
     display: flex;
@@ -67,7 +63,6 @@ body {
     overflow: hidden;
 }
 
-/* RETRO KONTENERY Z PODWÓJNĄ RAMKĄ */
 .outer-box {
     border: 3px solid var(--border-dark);
     background-color: var(--border-inner);
@@ -85,7 +80,6 @@ body {
     letter-spacing: 1px;
 }
 
-/* KAFELKI */
 .tiles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -131,7 +125,6 @@ body {
     margin-bottom: 2px;
 }
 
-/* OSTATNI RUCH */
 .last-move-box {
     margin-top: auto;
     background-color: var(--border-inner);
@@ -169,7 +162,6 @@ body {
     font-size: 0.6rem;
 }
 
-/* PRAWA STRONA: ZAKŁADKI */
 .tabs-outer {
     background-color: var(--border-inner);
     padding: 6px;
@@ -196,7 +188,6 @@ body {
     font-weight: bold;
 }
 
-/* GŁÓWNA LISTA KAFELKÓW POŻYCZEK */
 .main-list-box {
     flex: 1;
     background-color: var(--bg-main);
@@ -211,18 +202,18 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
-/* KAFELEK NA LIŚCIE DOKŁADNIE ZE SCREENA */
+/* KARTA POŻYCZKI RETRO */
 .retro-loan-card {
     background-color: var(--tile-olive);
     border: 3px solid var(--border-dark);
     padding: 12px 14px;
-    max-width: 320px;
+    max-width: 420px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .card-top-row {
@@ -241,6 +232,15 @@ body {
     color: var(--text-sand);
 }
 
+.card-mid-row {
+    font-size: 0.7rem;
+    color: var(--text-white);
+    background: var(--border-inner);
+    padding: 4px 6px;
+    display: flex;
+    justify-content: space-between;
+}
+
 .card-bottom-row {
     display: flex;
     justify-content: space-between;
@@ -252,16 +252,33 @@ body {
     color: var(--text-sand);
 }
 
+.card-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.action-btn {
+    background: none;
+    border: 1px solid var(--border-dark);
+    padding: 2px 6px;
+    font-size: 0.6rem;
+    cursor: pointer;
+}
+
+.action-pay    { color: var(--accent-green); background: var(--border-inner); }
+.action-status { color: var(--accent-orange); }
+.action-delete { color: var(--accent-red); }
+
 .status-tag {
     font-size: 0.85rem;
     font-weight: bold;
 }
-
 .status-splacone { color: var(--accent-green); }
 .status-aktywna  { color: var(--accent-orange); }
 .status-odsetki  { color: var(--accent-red); }
 
-/* DOLNY TERMINAL */
+/* TERMINAL */
 .terminal-outer {
     background-color: var(--border-inner);
     padding: 6px 12px;
@@ -318,7 +335,7 @@ body {
     color: var(--text-white);
 }
 
-/* LOGOWANIE I MODALE */
+/* MODALE */
 .auth-container, .modal-backdrop {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
@@ -392,7 +409,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* SZYBKIE PRZYCISKI KASETKI */
 .m-label-sub {
     font-size: 0.65rem;
     color: var(--text-dim);
@@ -414,46 +430,85 @@ body {
     cursor: pointer;
 }
 
-/* PARAGON */
+/* STYL PARAGONU (REAL POS RECEIPT) */
 .receipt-style {
-    background-color: #f7f4e9;
-    color: #1a1a1a;
-    border: 4px solid var(--black);
+    background-color: #faf8ef;
+    color: #111;
+    border: 3px solid #111;
+    font-family: 'Courier New', Courier, monospace;
+    max-width: 360px;
 }
 
 .receipt-header {
-    color: #1a1a1a;
+    color: #111;
     text-align: center;
-    font-size: 0.9rem;
-    border-bottom: 2px dashed #1a1a1a;
-    padding-bottom: 6px;
-    margin-bottom: 10px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    border-bottom: 2px dashed #111;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
 }
 
 .receipt-body {
-    font-size: 0.7rem;
-    line-height: 1.4;
-    color: #1a1a1a;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: #111;
 }
 
 .receipt-qr-wrap {
     display: flex;
     justify-content: center;
-    margin: 10px 0;
+    margin: 12px 0;
+    padding: 6px;
+    background: #fff;
+    border: 1px solid #ddd;
 }
 
-/* RAPORT A4 */
+.receipt-footer-cut {
+    font-size: 0.65rem;
+    text-align: center;
+    color: #666;
+    margin-top: 10px;
+    border-top: 1px dashed #999;
+    padding-top: 6px;
+}
+
+/* STYL RAPORTU A4 */
 .report-window {
-    max-width: 550px;
+    max-width: 650px;
 }
 
 .report-paper {
-    background: #fdfbf7;
-    color: #1a1a1a;
-    padding: 14px;
-    font-size: 0.75rem;
-    line-height: 1.35;
-    max-height: 320px;
+    background: #ffffff;
+    color: #111;
+    padding: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    max-height: 400px;
     overflow-y: auto;
-    border: 2px solid var(--border-dark);
+    border: 1px solid #111;
+}
+
+/* ZASADY DRUKOWANIA (PRINT MEDIA) */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .printable-area, .printable-area * {
+        visibility: visible;
+    }
+    .printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #fff !important;
+        color: #000 !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
 }
