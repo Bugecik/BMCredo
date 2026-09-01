@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btn-logout');
     const authError = document.getElementById('auth-error');
     const currentUserDisplay = document.getElementById('current-user-display');
+    const posTitleDisplay = document.getElementById('pos-title-display');
 
     // POS UI
     const loansList = document.getElementById('loans-list');
@@ -40,8 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const tileCalculator = document.getElementById('tile-calculator');
     const tileScanner = document.getElementById('tile-scanner');
     const tileReport = document.getElementById('tile-report');
+    const btnOpenSettings = document.getElementById('btn-open-settings');
 
     // Modale
+    const modalSettings = document.getElementById('modal-settings');
     const modalLoan = document.getElementById('modal-loan');
     const modalCalculator = document.getElementById('modal-calculator');
     const modalProlong = document.getElementById('modal-prolong');
@@ -59,6 +62,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const loanAmount = document.getElementById('loan-amount');
     const loanInterest = document.getElementById('loan-interest');
     const clientRatingWarning = document.getElementById('client-rating-warning');
+
+    // Ustawienia & Kasjerzy
+    const operatorCreateForm = document.getElementById('operator-create-form');
+    const opUsernameInput = document.getElementById('op-username-input');
+    const opPasswordInput = document.getElementById('op-password-input');
+    const operatorsListContainer = document.getElementById('operators-list-container');
+    const adminOperatorsSection = document.getElementById('admin-operators-section');
+    const nonAdminMsg = document.getElementById('non-admin-msg');
+
+    const generalSettingsForm = document.getElementById('general-settings-form');
+    const cfgCompanyName = document.getElementById('cfg-company-name');
+    const cfgDefaultInterest = document.getElementById('cfg-default-interest');
+    const cfgDefaultDays = document.getElementById('cfg-default-days');
+    const btnExportBackup = document.getElementById('btn-export-backup');
+    const receiptCompanyTitle = document.getElementById('receipt-company-title');
 
     // Kalkulator
     const calcPrincipal = document.getElementById('calc-principal');
@@ -102,33 +120,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const terminalEnter = document.getElementById('terminal-enter');
 
     let currentTab = 'splacone';
-    let currentData = { kasetka: 1000, loans: [], goals: [], earnedProfit: 0, lastMove: 'Brak' };
+    let currentData = {
+        kasetka: 1000,
+        loans: [],
+        goals: [],
+        operators: [],
+        settings: {
+            companyName: 'KASA POŻYCZKOWA RETRO POS',
+            defaultInterest: 10,
+            defaultDays: 14
+        },
+        earnedProfit: 0,
+        lastMove: 'Brak'
+    };
     let unsubscribeFirestore = null;
 
-    // Automatyczne logowanie sesyjne
-    const loggedUser = sessionStorage.getItem('bmcredo_logged_user');
-    if (loggedUser) {
-        approveLogin(loggedUser);
+    // Pobranie danych sesji (Użytkownik + ID Głównej Bazy Admina)
+    let loggedUser = sessionStorage.getItem('bmcredo_logged_user');
+    let activeDatabaseId = sessionStorage.getItem('bmcredo_db_id');
+
+    if (loggedUser && activeDatabaseId) {
+        approveLogin(loggedUser, activeDatabaseId);
     }
 
-    // Rejestracja w Firebase
+    // 1. REJESTRACJA NOWEJ GŁÓWNEJ BAZY ADMINA
     btnRegister.addEventListener('click', async () => {
         const u = usernameInput.value.trim().toLowerCase();
         const p = passwordInput.value.trim();
-        if (!u || !p) { showError('UZUPEŁNIJ POLA'); return; }
+        if (!u || !p) { showError('UZUPEŁNIJ POLA REJESTRACJI'); return; }
 
         try {
             const userDoc = await db.collection('users').doc(u).get();
             if (userDoc.exists) {
-                showError('UŻYTKOWNIK ISTNIEJE!');
+                showError('UŻYTKOWNIK O TEJ NAZWIE ISTNIEJE!');
                 return;
             }
 
-            await db.collection('users').doc(u).set({ password: p });
+            // Utwórz konto admina (jego baza to jego własny login)
+            await db.collection('users').doc(u).set({
+                password: p,
+                role: 'admin',
+                adminDatabaseId: u
+            });
+
             await db.collection('pos_data').doc(u).set({
                 kasetka: 1000,
                 earnedProfit: 0,
-                lastMove: '+ Urszula Bugajska (+60 zł)',
+                lastMove: `Inicjalizacja kasy (${u})`,
+                operators: [],
+                settings: {
+                    companyName: 'KASA POŻYCZKOWA RETRO POS',
+                    defaultInterest: 10,
+                    defaultDays: 14
+                },
                 goals: [
                     {
                         name: 'Fundusz Rezerwowy',
@@ -137,30 +181,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         current: '250.00'
                     }
                 ],
-                loans: [
-                    {
-                        code: 'P-101',
-                        name: 'Urszula Buga…',
-                        fullName: 'Urszula Bugajska',
-                        amount: '60.00',
-                        paidAmount: '60.00',
-                        interest: '10',
-                        odKiedy: '0d TEMU',
-                        date: new Date().toISOString(),
-                        splacone: true,
-                        prolongations: 0
-                    }
-                ]
+                loans: []
             });
 
             authError.style.color = '#68ad48';
-            authError.textContent = 'KONTO UTWORZONE W CHMURZE! ZALOGUJ SIĘ.';
+            authError.textContent = 'GŁÓWNA KASA UTWORZONA! ZALOGUJ SIĘ.';
         } catch (err) {
             showError('BŁĄD POŁĄCZENIA: ' + err.message);
         }
     });
 
-    // Logowanie
+    // 2. LOGOWANIE (OBSŁUGUJE ADMINÓW ORAZ KASJERÓW PRZYPISANYCH DO BAZY)
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const u = usernameInput.value.trim().toLowerCase();
@@ -173,8 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const userData = userDoc.data();
+            const dbId = userData.adminDatabaseId || u; // Baza admina
+
             sessionStorage.setItem('bmcredo_logged_user', u);
-            approveLogin(u);
+            sessionStorage.setItem('bmcredo_db_id', dbId);
+            sessionStorage.setItem('bmcredo_user_role', userData.role || 'admin');
+
+            approveLogin(u, dbId);
         } catch (err) {
             showError('BŁĄD POŁĄCZENIA: ' + err.message);
         }
@@ -182,15 +219,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnLogout.addEventListener('click', () => {
         if (unsubscribeFirestore) unsubscribeFirestore();
-        sessionStorage.removeItem('bmcredo_logged_user');
+        sessionStorage.clear();
         window.location.reload();
     });
 
-    function approveLogin(user) {
+    function approveLogin(user, dbId) {
         authOverlay.style.display = 'none';
         appContainer.style.display = 'flex';
         currentUserDisplay.textContent = user;
-        listenToUserCloudData(user);
+        listenToUserCloudData(dbId);
     }
 
     function showError(msg) {
@@ -198,18 +235,25 @@ document.addEventListener('DOMContentLoaded', () => {
         authError.textContent = msg;
     }
 
-    function listenToUserCloudData(user) {
+    // Synchronizacja w czasie rzeczywistym z bazą docelową
+    function listenToUserCloudData(dbId) {
         if (unsubscribeFirestore) unsubscribeFirestore();
 
-        unsubscribeFirestore = db.collection('pos_data').doc(user)
+        unsubscribeFirestore = db.collection('pos_data').doc(dbId)
             .onSnapshot((doc) => {
                 if (doc.exists) {
                     currentData = doc.data();
                     if (!currentData.goals) currentData.goals = [];
                     if (!currentData.loans) currentData.loans = [];
+                    if (!currentData.operators) currentData.operators = [];
+                    if (!currentData.settings) {
+                        currentData.settings = {
+                            companyName: 'KASA POŻYCZKOWA RETRO POS',
+                            defaultInterest: 10,
+                            defaultDays: 14
+                        };
+                    }
                     if (currentData.earnedProfit === undefined) currentData.earnedProfit = 0;
-                } else {
-                    currentData = { kasetka: 1000, loans: [], goals: [], earnedProfit: 0, lastMove: 'Brak' };
                 }
                 renderApp();
             }, (error) => {
@@ -217,9 +261,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    async function saveCloudData(user, data) {
+    async function saveCloudData(data) {
+        const dbId = sessionStorage.getItem('bmcredo_db_id');
         try {
-            await db.collection('pos_data').doc(user).set(data);
+            await db.collection('pos_data').doc(dbId).set(data);
         } catch (e) {
             alert('Błąd zapisu do chmury: ' + e.message);
         }
@@ -233,15 +278,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const createdDate = new Date(loan.date || new Date());
         const now = new Date();
 
+        const defaultPeriod = (currentData.settings && currentData.settings.defaultDays) ? parseInt(currentData.settings.defaultDays) : 14;
+
         const diffTime = Math.abs(now - createdDate);
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
         let accruedInterest = 0;
         let isOverdue = false;
 
-        if (diffDays > 14 && !loan.splacone) {
+        if (diffDays > defaultPeriod && !loan.splacone) {
             isOverdue = true;
-            const overduePeriods = Math.ceil((diffDays - 14) / 7);
+            const overduePeriods = Math.ceil((diffDays - defaultPeriod) / 7);
             accruedInterest = principal * (interestRate / 100) * overduePeriods;
         }
 
@@ -289,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Zamykanie modali
     document.querySelectorAll('.close-modal').forEach(btn => {
         btn.addEventListener('click', () => {
+            modalSettings.style.display = 'none';
             modalLoan.style.display = 'none';
             modalCalculator.style.display = 'none';
             modalProlong.style.display = 'none';
@@ -311,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Zakładki
+    // Zakładki w POS
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -321,10 +369,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Zakładki w Ustawieniach
+    document.querySelectorAll('.set-tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.set-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.set-tab-content').forEach(c => c.style.display = 'none');
+            e.target.classList.add('active');
+            document.getElementById(e.target.getAttribute('data-stab')).style.display = 'block';
+        });
+    });
+
     // RYSOWANIE WIDOKU
     function renderApp() {
         const data = currentData;
         const loans = data.loans || [];
+        const cfg = data.settings || {};
+
+        if (cfg.companyName) {
+            posTitleDisplay.textContent = `[ ${cfg.companyName.toUpperCase()} ]`;
+            receiptCompanyTitle.textContent = cfg.companyName.toUpperCase();
+        }
 
         let activeLoans = loans.filter(l => !l.splacone);
         let wObieguSum = activeLoans.reduce((acc, l) => {
@@ -410,6 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         renderGoalsList();
+        renderOperatorsList();
     }
 
     // Renderowanie celów
@@ -418,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         goalsListContainer.innerHTML = '';
 
         if (goals.length === 0) {
-            goalsListContainer.innerHTML = '<div style="font-size:0.7rem; color:#7f9372; text-align:center; padding:10px;">Brak zdefiniowanych celów. Utwórz pierwszy powyżej!</div>';
+            goalsListContainer.innerHTML = '<div style="font-size:0.7rem; color:#7f9372; text-align:center; padding:10px;">Brak celów. Utwórz pierwszy powyżej!</div>';
             return;
         }
 
@@ -450,11 +515,129 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Renderowanie listy operatorów w ustawieniach
+    function renderOperatorsList() {
+        const operators = currentData.operators || [];
+        operatorsListContainer.innerHTML = '';
+
+        if (operators.length === 0) {
+            operatorsListContainer.innerHTML = '<div style="font-size:0.65rem; color:var(--text-dim); padding:6px;">Brak dodatkowych kasjerów. Tylko Admin ma dostęp.</div>';
+            return;
+        }
+
+        operators.forEach((op, idx) => {
+            const div = document.createElement('div');
+            div.className = 'operator-item';
+            div.innerHTML = `
+                <span>KASJER: <b>${op.username}</b></span>
+                <button onclick="window.deleteOperator(${idx})" style="background:none; border:none; color:var(--accent-red); font-size:0.6rem; cursor:pointer;">[USUŃ KONTO]</button>
+            `;
+            operatorsListContainer.appendChild(div);
+        });
+    }
+
+    // === MODUŁ USTAWIENIA ===
+    btnOpenSettings.addEventListener('click', () => {
+        const userRole = sessionStorage.getItem('bmcredo_user_role');
+        const cfg = currentData.settings || {};
+
+        if (userRole === 'admin') {
+            adminOperatorsSection.style.display = 'block';
+            nonAdminMsg.style.display = 'none';
+        } else {
+            adminOperatorsSection.style.display = 'none';
+            nonAdminMsg.style.display = 'block';
+        }
+
+        cfgCompanyName.value = cfg.companyName || 'KASA POŻYCZKOWA RETRO POS';
+        cfgDefaultInterest.value = cfg.defaultInterest || 10;
+        cfgDefaultDays.value = cfg.defaultDays || 14;
+
+        modalSettings.style.display = 'flex';
+    });
+
+    // Dodanie operatora / sub-konta
+    operatorCreateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const opUser = opUsernameInput.value.trim().toLowerCase();
+        const opPass = opPasswordInput.value.trim();
+        const dbId = sessionStorage.getItem('bmcredo_db_id');
+
+        if (!opUser || !opPass) return;
+
+        try {
+            const userCheck = await db.collection('users').doc(opUser).get();
+            if (userCheck.exists) {
+                alert('Taki login użytkownika jest już zajęty!');
+                return;
+            }
+
+            // Utwórz konto kasjera wskazujące na bazę obecnego admina
+            await db.collection('users').doc(opUser).set({
+                password: opPass,
+                role: 'kasjer',
+                adminDatabaseId: dbId
+            });
+
+            const data = currentData;
+            if (!data.operators) data.operators = [];
+            data.operators.push({ username: opUser });
+            data.lastMove = `Dodano kasjera: ${opUser}`;
+            await saveCloudData(data);
+
+            opUsernameInput.value = '';
+            opPasswordInput.value = '';
+            alert(`Pomyślnie utworzono konto kasjera: ${opUser}! Może się logować do Twojej kasy.`);
+        } catch (err) {
+            alert('Błąd tworzenia konta: ' + err.message);
+        }
+    });
+
+    window.deleteOperator = async function(idx) {
+        const op = currentData.operators[idx];
+        if (!confirm(`Czy na pewno chcesz usunąć konto kasjera: ${op.username}?`)) return;
+
+        try {
+            await db.collection('users').doc(op.username).delete();
+            const data = currentData;
+            data.operators.splice(idx, 1);
+            data.lastMove = `Usunięto kasjera: ${op.username}`;
+            await saveCloudData(data);
+        } catch (err) {
+            alert('Błąd usuwania kasjera: ' + err.message);
+        }
+    };
+
+    // Zapis ogólnych ustawień
+    generalSettingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = currentData;
+        data.settings = {
+            companyName: cfgCompanyName.value.trim() || 'KASA POŻYCZKOWA RETRO POS',
+            defaultInterest: parseFloat(cfgDefaultInterest.value) || 10,
+            defaultDays: parseInt(cfgDefaultDays.value) || 14
+        };
+        data.lastMove = 'Zaktualizowano konfigurację POS';
+        await saveCloudData(data);
+        alert('Ustawienia kasy zostały pomyślnie zapisane!');
+        modalSettings.style.display = 'none';
+    });
+
+    // Kopia zapasowa JSON
+    btnExportBackup.addEventListener('click', () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `BMCredo_Backup_${new Date().toISOString().slice(0,10)}.json`);
+        dlAnchorElem.click();
+    });
+
     // 1. + POŻYCZKA
     tileAddLoan.addEventListener('click', () => {
+        const cfg = currentData.settings || {};
         loanPerson.value = '';
         loanAmount.value = '';
-        loanInterest.value = '10';
+        loanInterest.value = cfg.defaultInterest || '10';
         clientRatingWarning.style.display = 'none';
         modalLoan.style.display = 'flex';
     });
@@ -514,19 +697,20 @@ document.addEventListener('DOMContentLoaded', () => {
             odKiedy: '0d TEMU',
             date: new Date().toISOString(),
             splacone: false,
-            prolongations: 0
+            prolongations: 0,
+            operator: user
         };
 
         loans.push(newLoan);
         data.loans = loans;
-        data.lastMove = `Pożyczka: -${amount} zł dla ${person}`;
-        saveCloudData(user, data);
+        data.lastMove = `Pożyczka: -${amount} zł dla ${person} (Op: ${user})`;
+        saveCloudData(data);
 
         modalLoan.style.display = 'none';
         showReceipt(newLoan);
     });
 
-    // 2. MODUŁ KALKULATORA
+    // 2. KALKULATOR
     tileCalculator.addEventListener('click', () => {
         updateCalc();
         modalCalculator.style.display = 'flex';
@@ -562,7 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
         prolongLoanIndex.value = index;
         prolongClientInfo.innerHTML = `
             KLIENT: <b>${loan.fullName || loan.name}</b> [${loan.code}]<br>
-            Przedłużenie terminu spłaty o kolejne <b>14 DNI</b>.
+            Przedłużenie terminu spłaty o kolejny okres.
         `;
         prolongFeeInput.value = '20.00';
         modalProlong.style.display = 'flex';
@@ -582,31 +766,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fee > 0) {
             data.kasetka = (parseFloat(data.kasetka || 0) + fee).toFixed(2);
             data.earnedProfit = (parseFloat(data.earnedProfit || 0) + fee).toFixed(2);
-            data.lastMove = `Prolongata: ${loan.name} (+${fee.toFixed(2)} zł zysku)`;
+            data.lastMove = `Prolongata: ${loan.name} (+${fee.toFixed(2)} zł zysku / Op: ${user})`;
         } else {
-            data.lastMove = `Prolongata: ${loan.name} (+14 dni)`;
+            data.lastMove = `Prolongata: ${loan.name} (Op: ${user})`;
         }
 
-        saveCloudData(user, data);
+        saveCloudData(data);
         modalProlong.style.display = 'none';
     });
 
-    // 4. PARAGON (TIMES NEW ROMAN)
+    // 4. PARAGON
     function showReceipt(loan) {
         const details = calculateLoanDetails(loan);
+        const defaultDays = (currentData.settings && currentData.settings.defaultDays) ? parseInt(currentData.settings.defaultDays) : 14;
         const zwrotDate = new Date(loan.date || new Date());
-        zwrotDate.setDate(zwrotDate.getDate() + 14);
+        zwrotDate.setDate(zwrotDate.getDate() + defaultDays);
 
         receiptContent.innerHTML = `
             <div><b>KOD UMOWY:</b> ${loan.code}</div>
             <div><b>DATA ZAWARCIA:</b> ${new Date(loan.date || new Date()).toLocaleString()}</div>
+            <div><b>OPERATOR:</b> ${loan.operator || 'Admin'}</div>
             <div><b>DŁUŻNIK:</b> ${loan.fullName || loan.name}</div>
             <div style="margin: 6px 0; border-top: 1px dotted #000; border-bottom: 1px dotted #000; padding: 6px 0;">
                 <div>KWOTA GŁÓWNA: <b>${details.principal.toFixed(2)} PLN</b></div>
                 <div>WPŁACONO DOTYCHCZAS: <b>${details.paid.toFixed(2)} PLN</b></div>
                 <div>NALICZONE ODSETKI: <b>${details.accruedInterest.toFixed(2)} PLN</b></div>
                 <div>POZOSTAŁO DO SPŁATY: <b>${details.remainingToPay.toFixed(2)} PLN</b></div>
-                <div>STAWKA ODSETEK (>14 DNI): <b>${loan.interest}%</b></div>
+                <div>STAWKA ODSETEK: <b>${loan.interest}%</b></div>
                 <div>TERMIN ZWROTU: <b>${zwrotDate.toLocaleDateString()}</b></div>
             </div>
             <div>STATUS: <b>${loan.splacone ? 'SPŁACONE W CAŁOŚCI' : 'AKTYWNA DO SPŁATY'}</b></div>
@@ -670,12 +856,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (newPaid >= details.totalToRepay) {
             loan.splacone = true;
-            data.lastMove = `Spłacono w całości: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
+            data.lastMove = `Spłacono w całości: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł / Op: ${user})`;
         } else {
-            data.lastMove = `Wpłata raty: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł)`;
+            data.lastMove = `Wpłata raty: ${loan.fullName || loan.name} (+${payVal.toFixed(2)} zł / Op: ${user})`;
         }
 
-        saveCloudData(user, data);
+        saveCloudData(data);
         modalPayment.style.display = 'none';
     });
 
@@ -696,15 +882,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const goalName = goals[0].name;
         if (!confirm(`Czy przelać cały czysty zysk (+${profit.toFixed(2)} zł) do celu: "${goalName}"?`)) return;
 
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
-
         data.kasetka = (parseFloat(data.kasetka || 0) - profit).toFixed(2);
         data.goals[0].current = (parseFloat(data.goals[0].current || 0) + profit).toFixed(2);
         data.earnedProfit = 0;
         data.lastMove = `Przelano zysk (+${profit.toFixed(2)} zł) do [${goalName}]`;
 
-        saveCloudData(user, data);
+        saveCloudData(data);
     });
 
     // 7. CELE
@@ -715,7 +899,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     goalCreateForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         if (!data.goals) data.goals = [];
 
@@ -728,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         data.goals.push(newGoal);
         data.lastMove = `Nowy cel: ${newGoal.name}`;
-        saveCloudData(user, data);
+        saveCloudData(data);
 
         goalNameInput.value = '';
         goalDescInput.value = '';
@@ -750,7 +933,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     depositGoalForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         const gIdx = parseInt(depositGoalIndex.value);
         const depAmount = parseFloat(depositGoalAmount.value);
@@ -770,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data.goals[gIdx].current = (parseFloat(data.goals[gIdx].current || 0) + depAmount).toFixed(2);
         data.lastMove = `Do celu [${data.goals[gIdx].name}]: +${depAmount.toFixed(2)} zł`;
 
-        saveCloudData(user, data);
+        saveCloudData(data);
         modalDepositGoal.style.display = 'none';
         renderGoalsList();
     });
@@ -793,14 +975,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
-
         data.goals[goalIdx].current = (currentSaved - withdrawAmount).toFixed(2);
         data.kasetka = (parseFloat(data.kasetka || 0) + withdrawAmount).toFixed(2);
         data.lastMove = `Zwrot z celu [${goal.name}]: +${withdrawAmount.toFixed(2)} zł`;
 
-        saveCloudData(user, data);
+        saveCloudData(data);
         renderGoalsList();
     };
 
@@ -815,16 +995,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!confirm(confirmMsg)) return;
 
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
-
         if (savedAmount > 0) {
             data.kasetka = (parseFloat(data.kasetka || 0) + savedAmount).toFixed(2);
         }
 
         data.goals.splice(goalIdx, 1);
         data.lastMove = `Usunięto cel: ${goal.name} (Zwrot: +${savedAmount.toFixed(2)} zł)`;
-        saveCloudData(user, data);
+        saveCloudData(data);
         renderGoalsList();
     };
 
@@ -842,14 +1020,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!confirm(confirmMsg)) return;
 
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
-
         data.kasetka = (parseFloat(data.kasetka || 0) + netAdjustment).toFixed(2);
 
         const removed = data.loans.splice(index, 1);
         data.lastMove = `Usunięto pożyczkę: ${removed[0].name} (Korekta: +${netAdjustment.toFixed(2)} zł)`;
-        saveCloudData(user, data);
+        saveCloudData(data);
     };
 
     // 9. KASETKA
@@ -866,11 +1042,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('save-kasetka').addEventListener('click', () => {
-        const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         data.kasetka = parseFloat(kasetkaInputValue.value || 0).toFixed(2);
         data.lastMove = `Ręczna edycja kasetki: ${data.kasetka} zł`;
-        saveCloudData(user, data);
+        saveCloudData(data);
         modalKasetka.style.display = 'none';
     });
 
@@ -910,15 +1085,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     fullName: decodedText,
                     amount: defaultAmount.toFixed(2),
                     paidAmount: '0.00',
-                    interest: '10',
+                    interest: (data.settings && data.settings.defaultInterest) || '10',
                     odKiedy: '0d TEMU',
                     date: new Date().toISOString(),
                     splacone: false,
-                    prolongations: 0
+                    prolongations: 0,
+                    operator: user
                 });
                 data.loans = loans;
-                data.lastMove = `Skan QR: -${defaultAmount.toFixed(2)} zł`;
-                saveCloudData(user, data);
+                data.lastMove = `Skan QR: -${defaultAmount.toFixed(2)} zł (Op: ${user})`;
+                saveCloudData(data);
             },
             () => {}
         ).catch(() => {
@@ -927,12 +1103,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 11. RAPORT DOBOWY A4 (BEZBŁĘDNY DRUK PRZEZ IFRAME)
+    // 11. RAPORT DOBOWY A4
     tileReport.addEventListener('click', () => {
         const user = sessionStorage.getItem('bmcredo_logged_user');
         const data = currentData;
         const loans = data.loans || [];
         const goals = data.goals || [];
+        const cfg = data.settings || {};
         
         const activeLoans = loans.filter(l => !l.splacone);
         const splaconeLoans = loans.filter(l => l.splacone);
@@ -954,6 +1131,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td style="border:1px solid #000; padding:6px; text-align:center;">${i+1}</td>
                     <td style="border:1px solid #000; padding:6px; text-align:center;"><b>${l.code}</b></td>
                     <td style="border:1px solid #000; padding:6px;">${l.fullName || l.name}</td>
+                    <td style="border:1px solid #000; padding:6px; text-align:center;">${l.operator || 'Admin'}</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">${details.principal.toFixed(2)} zł</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">+${details.accruedInterest.toFixed(2)} zł</td>
                     <td style="border:1px solid #000; padding:6px; text-align:right;">${details.paid.toFixed(2)} zł</td>
@@ -975,8 +1153,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const reportHtml = `
             <div style="font-family:'Times New Roman', Times, serif; color:#000; padding:10px;">
                 <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:8px; margin-bottom:12px;">
-                    <h2 style="font-size:18pt; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">RAPORT DOBOWY KASY POŻYCZKOWEJ</h2>
-                    <p style="font-size:12pt; margin:2px 0;">System: BMCredo POS | Operator kasy: <b>${user.toUpperCase()}</b></p>
+                    <h2 style="font-size:18pt; font-weight:bold; margin-bottom:4px; text-transform:uppercase;">${cfg.companyName || 'RAPORT DOBOWY KASY POŻYCZKOWEJ'}</h2>
+                    <p style="font-size:12pt; margin:2px 0;">Operator raportujący: <b>${user.toUpperCase()}</b></p>
                     <p style="font-size:10pt; color:#444;">Data wygenerowania: ${new Date().toLocaleString()}</p>
                 </div>
 
@@ -988,7 +1166,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </tr>
                         <tr>
                             <td><b>CZYSTY ZYSK Z ODSETEK / PROLONGAT:</b></td>
-                            <td style="text-align:right;"><b>+${parseFloat(data.earnedProfit || 0).toFixed(2)} PLN</b></td>
+                            <td style="text-align:right; color:#2e7d32;"><b>+${parseFloat(data.earnedProfit || 0).toFixed(2)} PLN</b></td>
                         </tr>
                         <tr>
                             <td><b>ŚRODKI ZGROMADZONE W CELACH:</b></td>
@@ -1017,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th style="border:1px solid #000; padding:5px;">LP</th>
                             <th style="border:1px solid #000; padding:5px;">KOD</th>
                             <th style="border:1px solid #000; padding:5px;">KLIENT</th>
+                            <th style="border:1px solid #000; padding:5px;">OP</th>
                             <th style="border:1px solid #000; padding:5px;">KAPITAŁ</th>
                             <th style="border:1px solid #000; padding:5px;">ODSETKI</th>
                             <th style="border:1px solid #000; padding:5px;">WPŁACONO</th>
@@ -1025,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${tableRows || '<tr><td colspan="8" style="text-align:center; padding:10px;">Brak pozycji do wyświetlenia.</td></tr>'}
+                        ${tableRows || '<tr><td colspan="9" style="text-align:center; padding:10px;">Brak pozycji do wyświetlenia.</td></tr>'}
                     </tbody>
                 </table>
 
@@ -1039,7 +1218,6 @@ document.addEventListener('DOMContentLoaded', () => {
         reportContent.innerHTML = reportHtml;
         modalReport.style.display = 'flex';
 
-        // Obsługa bezpośredniego, czystego druku A4 przez odizolowany iframe
         btnPrintReport.onclick = () => {
             const frameDoc = printFrame.contentWindow.document;
             frameDoc.open();
@@ -1088,17 +1266,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 fullName: `Wpis terminala: ${val}`,
                 amount: defaultAmt.toFixed(2),
                 paidAmount: '0.00',
-                interest: '10',
+                interest: (data.settings && data.settings.defaultInterest) || '10',
                 odKiedy: '0d TEMU',
                 date: new Date().toISOString(),
                 splacone: false,
-                prolongations: 0
+                prolongations: 0,
+                operator: user
             });
             data.loans = loans;
-            data.lastMove = `Terminal: -${defaultAmt.toFixed(2)} zł (${val})`;
+            data.lastMove = `Terminal: -${defaultAmt.toFixed(2)} zł (${val} / Op: ${user})`;
         }
 
-        saveCloudData(user, data);
+        saveCloudData(data);
         terminalInput.value = '';
     }
 

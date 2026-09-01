@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>[ KASA RETRO POS ]</title>
-    <link rel="stylesheet" href="style.css?v=9">
+    <link rel="stylesheet" href="style.css?v=10">
     
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -33,7 +33,7 @@
                 </div>
                 <div class="auth-buttons">
                     <button type="submit" class="retro-btn">ZALOGUJ</button>
-                    <button type="button" id="btn-register" class="retro-btn secondary">REJESTRACJA</button>
+                    <button type="button" id="btn-register" class="retro-btn secondary">NOWA KASA (ADMIN)</button>
                 </div>
             </form>
         </div>
@@ -45,7 +45,7 @@
         <!-- LEWA KOLUMNA -->
         <aside class="pos-left-panel">
             <div class="outer-box header-box">
-                <div class="box-label-title">[ KASA RETRO POS ]</div>
+                <div class="box-label-title" id="pos-title-display">[ KASA RETRO POS ]</div>
             </div>
 
             <div class="tiles-grid">
@@ -118,12 +118,16 @@
                 <button type="button" id="btn-transfer-profit" class="profit-transfer-btn">PRZELEJ ZYSK NA CEL</button>
             </div>
 
+            <!-- PRZYCISK USTAWIENIA I INFO O SESJI -->
             <div class="outer-box last-move-box">
                 <div class="sub-label">OSTATNI RUCH:</div>
                 <div class="last-move-val" id="last-move-text">+ Brak</div>
                 <div class="user-subline">
-                    OP: <span id="current-user-display">MBugajski</span>
-                    <button id="btn-logout" class="logout-link">[WYLOGUJ]</button>
+                    <span>OP: <b id="current-user-display">Admin</b></span>
+                    <div>
+                        <button id="btn-open-settings" class="settings-link">[USTAWIENIA]</button>
+                        <button id="btn-logout" class="logout-link">[WYLOGUJ]</button>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -160,7 +164,71 @@
 
     <!-- === KONTENERY / MODALE === -->
 
-    <!-- 1. MODAL DODAWANIA POŻYCZKI -->
+    <!-- 1. MODAL USTAWIENIA & SUB-KONTA KASJERÓW -->
+    <div id="modal-settings" class="modal-backdrop" style="display:none;">
+        <div class="modal-window settings-window">
+            <div class="modal-header">[ USTAWIENIA SYSTEMU & OPERATORZY ]</div>
+
+            <div class="settings-tabs">
+                <button type="button" class="set-tab-btn active" data-stab="tab-operators">OPERATORZY KASY</button>
+                <button type="button" class="set-tab-btn" data-stab="tab-general">KONFIGURACJA POS</button>
+            </div>
+
+            <!-- ZAKŁADKA 1: KASJERZY / SUB-KONTA -->
+            <div id="tab-operators" class="set-tab-content">
+                <div id="admin-operators-section">
+                    <form id="operator-create-form" style="border-bottom: 2px dashed #293223; padding-bottom: 10px; margin-bottom: 10px;">
+                        <div class="m-label-sub" style="color:var(--accent-orange);">+ UTWÓRZ KONTO KASJERA (PRZYPISANE DO TEJ KASY):</div>
+                        <div class="m-input-group">
+                            <label>LOGIN KASJERA:</label>
+                            <input type="text" id="op-username-input" required placeholder="np. kasjer1">
+                        </div>
+                        <div class="m-input-group">
+                            <label>HASŁO KASJERA:</label>
+                            <input type="password" id="op-password-input" required placeholder="••••">
+                        </div>
+                        <button type="submit" class="retro-btn" style="width:100%;">DODAJ OPERATORA</button>
+                    </form>
+
+                    <div class="m-label-sub" style="color:var(--text-white);">LISTA PRZYPISANYCH OPERATORÓW:</div>
+                    <div id="operators-list-container" class="operators-list-box"></div>
+                </div>
+                <div id="non-admin-msg" style="display:none; font-size:0.75rem; color:var(--text-dim); text-align:center; padding:15px;">
+                    Zarządzanie operatorami jest dostępne wyłącznie dla Głównego Administratora bazy.
+                </div>
+            </div>
+
+            <!-- ZAKŁADKA 2: OGÓLNE USTAWIENIA -->
+            <div id="tab-general" class="set-tab-content" style="display:none;">
+                <form id="general-settings-form">
+                    <div class="m-input-group">
+                        <label>NAZWA KASY / FIRMY (NA WYDRUKACH):</label>
+                        <input type="text" id="cfg-company-name" placeholder="KASA POŻYCZKOWA RETRO POS">
+                    </div>
+                    <div class="m-input-group">
+                        <label>DOMYŚLNA STAWKA ODSETEK (%):</label>
+                        <input type="number" step="0.5" id="cfg-default-interest" placeholder="10">
+                    </div>
+                    <div class="m-input-group">
+                        <label>DOMYŚLNY OKRES POŻYCZKI (DNI):</label>
+                        <input type="number" step="1" id="cfg-default-days" placeholder="14">
+                    </div>
+                    <button type="submit" class="retro-btn" style="width:100%; margin-top:8px;">ZAPISZ KONFIGURACJĘ</button>
+                </form>
+
+                <div style="border-top: 2px dashed #293223; margin-top: 14px; padding-top: 10px;">
+                    <div class="m-label-sub" style="color:var(--accent-green);">KOPIA ZAPASOWA DANYCH (BACKUP):</div>
+                    <button type="button" id="btn-export-backup" class="retro-btn secondary" style="width:100%;">POBIERZ BACKUP BAZY (JSON)</button>
+                </div>
+            </div>
+
+            <div class="m-btn-group" style="margin-top: 14px;">
+                <button type="button" class="retro-btn secondary close-modal">ZAMKNIJ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MODAL DODAWANIA POŻYCZKI -->
     <div id="modal-loan" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ NOWA POŻYCZKA ]</div>
@@ -175,7 +243,7 @@
                     <input type="number" step="0.01" id="loan-amount" required placeholder="100.00">
                 </div>
                 <div class="m-input-group">
-                    <label>ODSETKI PO 14 DNIACH (%):</label>
+                    <label>ODSETKI PO TERMINIE (%):</label>
                     <input type="number" step="0.1" id="loan-interest" value="10">
                 </div>
                 <div class="m-btn-group">
@@ -186,7 +254,7 @@
         </div>
     </div>
 
-    <!-- 2. MODAL KALKULATORA FINANSOWEGO -->
+    <!-- 3. MODAL KALKULATORA FINANSOWEGO -->
     <div id="modal-calculator" class="modal-backdrop" style="display:none;">
         <div class="modal-window calc-window">
             <div class="modal-header">[ KALKULATOR ODSETEK POS ]</div>
@@ -199,7 +267,7 @@
                 <input type="number" step="1" id="calc-rate" placeholder="10" value="10">
             </div>
             <div class="m-input-group">
-                <label>DNI PRZETERMINOWANIA (POZA 14D):</label>
+                <label>DNI PRZETERMINOWANIA (POZA TERMIN):</label>
                 <input type="number" step="1" id="calc-days" placeholder="7" value="7">
             </div>
 
@@ -215,10 +283,10 @@
         </div>
     </div>
 
-    <!-- 3. MODAL PROLONGATY (+14 DNI) -->
+    <!-- 4. MODAL PROLONGATY (+14 DNI) -->
     <div id="modal-prolong" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
-            <div class="modal-header">[ PROLONGATA TERMINU +14 DNI ]</div>
+            <div class="modal-header">[ PROLONGATA TERMINU ]</div>
             <div id="prolong-client-info" style="font-size:0.75rem; color:#d89f53; margin-bottom:10px;"></div>
             <form id="prolong-form">
                 <input type="hidden" id="prolong-loan-index">
@@ -227,14 +295,14 @@
                     <input type="number" step="0.01" id="prolong-fee-input" required value="20.00">
                 </div>
                 <div class="m-btn-group">
-                    <button type="submit" class="retro-btn">PRZEDŁUŻ O 14 DNI</button>
+                    <button type="submit" class="retro-btn">PRZEDŁUŻ TERMIN</button>
                     <button type="button" class="retro-btn secondary close-modal">ANULUJ</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 4. MODAL REJESTROWANIA WPŁATY -->
+    <!-- 5. MODAL REJESTROWANIA WPŁATY -->
     <div id="modal-payment" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ REJESTRACJA WPŁATY ]</div>
@@ -253,7 +321,7 @@
         </div>
     </div>
 
-    <!-- 5. MODAL CELE / SKARBONKA -->
+    <!-- 6. MODAL CELE / SKARBONKA -->
     <div id="modal-goals" class="modal-backdrop" style="display:none;">
         <div class="modal-window goals-window">
             <div class="modal-header">[ CELE FINANSOWE / SKARBONKA ]</div>
@@ -283,7 +351,7 @@
         </div>
     </div>
 
-    <!-- 6. MODAL WPŁATY NA CEL Z KASETKI -->
+    <!-- 7. MODAL WPŁATY NA CEL Z KASETKI -->
     <div id="modal-deposit-goal" class="modal-backdrop" style="display:none; z-index:10000;">
         <div class="modal-window">
             <div class="modal-header">[ WPŁATA Z KASETKI NA CEL ]</div>
@@ -302,12 +370,12 @@
         </div>
     </div>
 
-    <!-- 7. MODAL PARAGONU (TIMES NEW ROMAN) -->
+    <!-- 8. MODAL PARAGONU (TIMES NEW ROMAN) -->
     <div id="modal-receipt" class="modal-backdrop" style="display:none;">
         <div class="modal-window receipt-wrapper">
             <div id="receipt-printable" class="receipt-thermal-paper">
                 <div class="receipt-header-tnr">
-                    <h3>KASA POŻYCZKOWA RETRO POS</h3>
+                    <h3 id="receipt-company-title">KASA POŻYCZKOWA RETRO POS</h3>
                     <p>DOWÓD ZAWARCIA UMOWY POŻYCZKI</p>
                 </div>
                 <div class="receipt-divider-dashes">--------------------------------</div>
@@ -328,7 +396,7 @@
         </div>
     </div>
 
-    <!-- 8. MODAL KASETKI -->
+    <!-- 9. MODAL KASETKI -->
     <div id="modal-kasetka" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ STAN KASETKI ]</div>
@@ -351,7 +419,7 @@
         </div>
     </div>
 
-    <!-- 9. MODAL SKANERA QR -->
+    <!-- 10. MODAL SKANERA QR -->
     <div id="modal-scanner" class="modal-backdrop" style="display:none;">
         <div class="modal-window">
             <div class="modal-header">[ KAMERA SKANER QR ]</div>
@@ -360,7 +428,7 @@
         </div>
     </div>
 
-    <!-- 10. MODAL RAPORTU DOBOWEGO A4 -->
+    <!-- 11. MODAL RAPORTU DOBOWEGO A4 -->
     <div id="modal-report" class="modal-backdrop" style="display:none;">
         <div class="modal-window report-window">
             <div class="modal-header no-print">[ RAPORT DOBOWY A4 ]</div>
@@ -372,9 +440,9 @@
         </div>
     </div>
 
-    <!-- UKRYTY I FRAME DO DRUKU A4 BEZ ZNIEKSZTAŁCEŃ -->
+    <!-- UKRYTY IFRAME DO CZYSTEGO DRUKU A4 -->
     <iframe id="print-frame" style="display:none;"></iframe>
 
-    <script src="app.js?v=9"></script>
+    <script src="app.js?v=10"></script>
 </body>
 </html>
